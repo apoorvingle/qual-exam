@@ -1,0 +1,552 @@
+\documentclass[format=sigplan,manuscript,review,screen, nonacm]{acmart}
+
+\usepackage{typeclasses}
+\usepackage{parskip}
+\citestyle{acmauthoryear}
+\setcitestyle{sort&compress}
+\setcopyright{none}
+\title{Dialects of Type Computations in Haskell}
+\subtitle{Type clases, Type Families, and their variaties}
+\author{Apoorv Ingle}
+\orcid{0000-0002-7399-9762}
+\affiliation{%
+  \institution{University of Iowa}
+  \department{Department of Computer Science}
+  \streetaddress{McLean Hall}
+  \city{Iowa City}
+  \state{Iowa}
+  \country{USA}}
+\keywords{typeclass, type family}
+
+\begin{document}
+\begin{abstract}
+In modern programming languages, it is a well perceived notion,
+that static types have a two fold advantage (1) It serves as a guiding tool to help programmers
+write correct code (2) the type checker can help identify
+code that does not have a correct behavior. An expressive type system can
+guarantee stronger claims about the written programs. Typeclasses
+with functional dependencies and type families are two ways of having an expressive
+type system and performing computations at type level types in Haskell.
+This paper serves as a primer on the dark arts of typeclasses with functional dependencies
+and type families along with their generalization, constraint type families.
+\end{abstract}
+\maketitle
+
+\section{Introduction}
+Type classes and their extensions and type families are two powerful extensions to
+the type system of the Haskell language. Type classes, originally introduced by
+\cite{wadler_polymorphism_1989} was extended to have multiple parameters
+that represented relations on types. \citep{jones_qualified_1994}'s
+theory of qualified types gave an account of type classes by introducing predicates or
+constraints on types at syntax level.
+
+\section {Preliminaries}
+
+\section{Typeclasses}
+%% The problem
+Type classes were originally introduced to avoid the problem of implicit code blowup while supporting
+overloading of operators in languages based on polymorphic lambda calculus.
+For example, consider built-in or primitive types such as \texttt{Int} and \texttt{Char}.
+We want to define a function !inc :: a -> a! that when applied to a value of type
+\texttt{Int} returns the next \texttt{Int}, similarly, when applied to a value of type \texttt{Char}
+returns the next \texttt{Char}. Both these types would have specialized versions of how
+to return the next value say !incInt :: Int -> Int! and !incChar :: Char -> Char!.
+Now, all the functions that use the polymorphic function !inc! would need to resolve
+the overloaded operator !inc! it to a specific instance during compile time. In a na\"ive compilation strategy,
+such a function would need to be generated for each instance of the ground type where it is defined.
+In this example, we would have to generate two copies, one for \texttt{Int} and other for \texttt{Char}.
+While this method works in principle, this is inefficient and leads to a code blowup during compile time.
+
+%% The solution
+To solve this problem of code blowup, \cite{wadler_polymorphism_1989} suggested the use of dictionaries.
+In this method, each polymorphic function would be rewritten by the compiler where it
+would take in an extra implicit dictionary argument that is parameterized by the type to be used at call site.
+Continuing with the !inc! example its new type would be !inc :: Incable a => a -> a!.
+To assert that any type \texttt{$\tau$} indeed is defined on the function !inc! we declare
+a typeclass instance !Incable $\tau$! with !inc! function associated with it.
+This can be achieved in Haskell using the syntax shown in \pref{fig:typeclass-example}.
+
+\begin{figure}[ht]
+  \begin{tabular}{c c c}
+    \begin{code}
+      class Incable a where
+        inc :: a -> a
+    \end{code}&%
+    \begin{code}
+      instance Incable Int where
+        inc = incInt
+    \end{code}&%
+    \begin{code}
+      instance Incable Char where
+        inc = incChar
+    \end{code}
+  \end{tabular}
+  \begin{tabular}{c c}
+    \begin{code}
+      inc :: Incable a => a -> a
+      inc d c = d.inc c
+    \end{code}&%
+  \end{tabular}
+  \caption{\texttt{Incable} Typeclass and its Instances}
+  \label{fig:typeclass-example}
+\end{figure}
+
+One can even have a hierarchy of typeclasses to enable code reuse.
+From abstract algebra, A !Semigroup! is a collection of
+elements closed under an associative binary operation and a !Group! is nothing but a !Semigroup!
+that also has inverses and a unique identity element. To model integers
+as a group with addition as a binary operation and $0$ as the identity element with the inverse operation
+being just the negative of the integer we can define the instances !Semigroup Int! and !Group Int!
+as shown in \pref{fig:type-class-hierarchy}. In the dictionary representation of !Group! it would contain the method
+of its superclass !Semigroup! as well as the methods declared within the class.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l}
+    \begin{code}
+      class Semigroup a where
+          (*)    :: a -> a -> a
+
+      instance Semigroup Int where
+          a * b = a + b
+
+      instance (Semigroup a, Semigroup)
+          => Semigroup (a, b) where
+          (a1, b1) * (a2, b2) = (a1 * a2, b1 * b2)
+    \end{code}&%
+    \begin{code}
+      class Semigroup a => Group a where
+          ident  :: a
+          invert :: a -> a
+      
+      instance Group Int where
+          ident   = 0
+          invert a = -a 
+
+      instance (Semigroup a, Semigroup b)
+          => Group (a, b) where
+          ident  = (ident, ident)
+          invert (a, b) = (invert a, invert b)
+    \end{code}
+  \end{tabular}
+  \caption{A Hierarchy of Typeclasses}
+  \label{fig:type-class-hierarchy}
+\end{figure}
+
+%% Comparison with other languges
+In comparison with other languages, as a first approximation, typeclasses look like interfaces from
+object oriented languages like Java. However there are subtle differences. It would not be possible
+to define an interface like !Semigroup! in Java that is polymorphic in more than one parameter.
+This would have to be achieved using generics such as !interface Comparable<T>(T obj) { ... }!.
+Typeclasses are also different from ML modules as the latter helps achieve data abstraction while the former does not.
+
+\subsection{Multiparameter Typeclasses}
+%% What are these?
+A natural extension to typeclasses with single parameter would be to have multiple parameters.
+A multiparameter typeclass with $n$ type parameters would then represent a relation over $n$ types.
+An example of such a typeclass would be !Add a b c! that represents
+all the types that support an add !(+)! operation. We would expect to have instances such as !Add Int Int Int!, 
+!Add Int Float Float!, and so on. The instances of typeclass !TEq! would assert that types !a! and !b! that are equal.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l l}
+    \begin{code}
+class Add m n p where
+  (+) :: m -> n -> p
+    \end{code}&%
+    \begin{code}
+instance Add Int Float Float where
+  (+) a b = addFloat (toFloat a) b
+    \end{code}&%
+    \begin{code}
+instance Add Int Int Int
+  (+) a b = intAdd a b
+    \end{code}\\
+    \begin{code}
+class TEq a b
+    \end{code}&%
+    \begin{code}
+instance TEq Int Int
+    \end{code}&%
+    \begin{code}
+instance TEq Char Char
+    \end{code}
+  \end{tabular}
+  \caption{multiparameter Typeclasses}
+  \label{fig:multip-typeclass}
+\end{figure}
+%% What do they accomplish?
+In \pref{fig:multip-typeclass}, notice how !TEq! typeclass has no operations associated with it.
+In this view, we are no longer using typeclasses to give an implementation of polymorphic
+functions at specific types. Its sole purpose is to define a predicate (or a relation) on types. 
+We can describe !Add! and !TEq! in simple set semantics as, $\texttt{Add} = \Set{(Int, Int, Int), (Int, Float, Float)}$
+and $\texttt{TEq} = \Set{(Int, Int),(Char, Char)}$.
+
+%% What problems do they introduce?
+Multiparameter typeclasses, while being powerful are problematic in practice.
+It is possible for a programmer to declare conflicting instances of such a type class.
+Declaring !Add Int Float Float! and !Add Int Float Int!
+would be conflicting as the type inference algorithm will no longer be able to resolve
+the overloaded operator !+!. The type system has no mechanism
+to identify such inconsistent instances and disallow them at compile time. The situation gets worse
+as the type error would be raised at the use of the overloaded operator confusing the programmer about the
+cause of the issue. However, there may be cases where we do would want to allow such definitions as well.
+Consider a class !Convert a b! that converts a type !a! to a type !b!. All four instances of this class---
+!Convert Int Int64!, !Convert Int64 Int! !Convert Int Int! and !Convert Int64 Int64!---are valid.
+
+\subsection{Functional Dependencies with Examples}
+%% How does this solve the previous problem
+Functional dependencies\cite{jones_tcfd_2000} is a generalization of multiparameter type classes.
+It introduces a new syntax where the user can specify a relation between the type parameters
+while declaring the typeclass. There is no change while declaring the instances for the typeclasses.
+In this new syntax !x -> y! means that ``\texttt{x} uniquely determines \texttt{p}''.
+As shown in \pref{fig:tc-fd}, !Convert a b! typeclass is just a binary relation on types while 
+the new !Add m n p! typeclass relates the type parameters such that !m! and !n! determine !p!.
+We can also have multiple functional dependencies as with !TEq! typeclass where !t! and !u! determine
+each other. In general we can have multiple parameters on both sides of the arrow !($x_1$, ..., $x_m$) -> ($y_1$, ..., $y_m$)!.
+
+\begin{figure}[h t]
+  \begin{tabular}{c c}
+    \begin{code}
+      class Convert a b where
+         to :: a -> b
+
+      class TEq t u | t -> u, u -> t
+
+      class Add m n p | m n -> p where
+        (+) :: m -> n -> p
+      instance Add Int Int Int where
+         ... 
+    \end{code}&%
+    \begin{code}
+      instance Add Int Float Float where
+         ...
+      instance Add Float Int Float where
+         ...
+      instance Add Int Float Int -- Error!
+
+      e :: (Add Int Float b, Add b Int c) => c
+      e = (1 + 2.0) + 3 
+    \end{code}
+  \end{tabular}
+  \caption{\texttt{Add} with Functional Dependency}
+  \label{fig:tc-fd}
+\end{figure}
+
+With these functional dependency annotations, the programmer
+can now accurately specify the intention of the typeclasses.
+Further, the compiler now has a way to detect inconsistencies with
+the declared instances and flag an error whenever it detects one.
+This improves error reporting as it flags errors at inconsistent declaration site
+rather previously confusing at the operator use site. For example,
+the functional dependency on !m n -> p! can now help the compiler flag
+the instance !Add Int Float Int! as a conflicting instance
+!Add Int Float Float! because !Int! and !Float! together should uniquely determine a type.
+
+There is also an additional advantage of using functional dependencies, they
+can be used to help the type inference improve
+the inferred types. The improvement is in the sense that seemingly polymorphic type
+could potentially resolve to a unique type as seen with
+the type of the expression !(2 + 3.0) + 3!. We can infer
+that type !b! has to be !Float!, and using this information we can
+then deduce that the type of the expression !c! has to be !Float!.
+Without the functional dependency on the class, it would not be impossible
+to make such an inference.
+
+\begin{figure}[ht]
+  \begin{tabular}{c c}
+    \begin{code}
+      data Z
+      data S n
+
+      class IsPeano c
+      instance IsPeano Z
+      instance IsPeano n => IsPeano (S n)
+
+      class (IsPeano m, IsPeano m, IsPeano p)
+          => Plus m n p | m n -> p
+      instance IsPeano m => Plus Z m m
+      instance Plus n m p => Plus (S n) m (S p)
+      \end{code}&%
+      \begin{code}
+      instance TEq Int Int
+      instance TEq Z Z
+      instance Plus (S Z) (S Z) m
+          => TEq (S (S Z)) m
+      instance Plus (S Z) (S Z) m
+          => TEq (S (S (S Z))) m -- Error!
+    \end{code}
+  \end{tabular}
+  \caption{Peano Arithmetic with Functional Dependencies}
+  \label{fig:peano-arith}
+\end{figure}
+With functional dependencies at our disposal, We can even perform peano arithmetic at type level as shown in \pref{fig:peano-arith}.
+First we define two datatypes !Z! and !S n! that represent the number zero and successor of a number !n!,
+respectively. The instances of !IsPeano! asserts that that !Z! is a peano number also, if !n! is a peano number
+then !S n! is a Peano number. The instances of !Plus! typeclass relates three peano numbers where the relation
+holds if the first two peano numbers add up to be equal to the third. Thus, !Peano Z m m! asserts
+!0 + n = n! while !Plus n m p => Plus (S n) m (S p)! asserts that (1 + n) + m = (1 + p) if n + m = p.
+The !TEq! instance holds when there is an appropriate !Plus! instance defined. Notice how the functional dependency
+!t -> u, u -> t! describes the fact that all instance of !TEq! should have the same type for !t! and !u!. Without this
+functional dependency it would impossible to enforce the criteria for a type class whose instances intended to mean
+that the types are equivalent.
+
+The idea of functional dependency has been borrowed from the theory of
+databases\cite{codd_realtional_1970, amstrong_dependency_1974}.
+
+\subsection{Formalizing Type classes with Functional Dependencies}
+\cite{jones_qualified_1994} uses a general framework
+of qualified types to formalize the system with type classes.
+In this framework, the predicates on types are part of the syntax of the type language.
+The typeclasses are nothing but predicates on types
+and declaring instances is the assertion that the types satisfy the predicate.
+We say the $\typing \Preds \TEnv M \tau$ is a judgment
+that holds when there is a typing derivation that shows $M$ has type $\tau$
+with predicates $\Preds$ being satisfied and the free variables in $M$
+are given types by the typing environment $\TEnv$. The goal of the type inference
+is to find the most general pair, $(\Preds, \tau)$ for a given term $M$ and typing
+environment $\TEnv$. The principle type for the term can then be given as
+$\forall \alpha. \Preds \then \tau$ where $\alpha$ are the type variables that appear in $\tau$.
+
+
+
+
+In set a simple theoretic semantics, type classes can be considered as a set of types.
+$\texttt{Incable} = \Set{\texttt{Int}, \texttt{Char}}$ while
+$\texttt{Group} = \Set{\texttt{Int}} \cup \Set{(\tau_1, \tau_2) \mid \tau_1, \tau_2 \in \texttt{Group}}$ and
+$\texttt{Semigroup} = \Set{\texttt{Int}} \cup \Set{(\tau_1, \tau_2) \mid \tau_1, \tau_2 \in \texttt{Semigroup}}$.
+Multiparameter typeclasses represent relations over types.
+Thus, $\texttt{TEq} = \Set{(\texttt{Int}, \texttt{Int}),  (\texttt{Z}, \texttt{Z})}
+\cup \Set{(\texttt{S u}, \texttt{S t}) \mid (\texttt{u}, \texttt{t}) \in \texttt{TEq}} $
+
+
+% While trying to solve the code blow up problem, we notice that we are no longer in
+% the realm of original Hindley-Milner type system. The types in this system are richer in the sense
+% we can now have predicates on types. An intuitive set semantic view of predicate types
+% is a set of all the types that satisfy the constraint. Formally,
+% $\texttt{Incable} = \Set{Int, Char}$ while
+% $\texttt{Group} = \Set{Int} \cup \Set{(\tau_1, \tau_2) \mid \tau_1, \tau_2 \in \texttt{Group}}$ and
+% $\texttt{Semigroup} = \Set{Int} \cup \Set{(\tau_1, \tau_2) \mid \tau_1, \tau_2 \in \texttt{Semigroup}}$.
+
+% A natural question arises---how can this new type system be formalized?
+% Does it guarantee the same pleasant properties that the original Hindley-Milner system enjoys---principle typing,
+% do well typed programs don't go wrong? 
+
+% In a Hindley Milner type system we say $\TEnv \vdash M : \tau$ when there is a derivation
+% that shows that the term $M$ has type $\tau$ with $\TEnv$ containing the free variables in $M$. Extending
+% the idea to a type system with qualified types, 
+
+\begin{figure}[ht]
+  \[
+  \begin{array}{l}
+    \text{Term Variables}\quad    x, y\\
+    \text{Type Variables}\quad    \alpha, \beta\\
+    \text{Type constants}\quad \iota\\
+    \text{Class Constructors}\quad C\\
+    \text{Data Constructors}\quad  D\\
+    \text{Type Constructors}\quad  T
+  \end{array}
+  \begin{array}{l}
+    \text{Data Declarations}\quad        T \overline{\alpha} = \overline{D \overline{\alpha}}\\
+    \text{Class Declarations}\quad       \texttt{class}\ \overline{C\overline{\alpha}} \then C\overline{\alpha}
+                                         \mid \overline{\alpha} \to \alpha
+                                             ; \overline{x :: \tau}\\
+    \text{Instance Declarations}\quad    \texttt{instance}\ \overline{C\overline{\alpha}} \then C\overline{\tau}
+                                             ; \overline{x = M}
+  \end{array}
+  \]
+  \[
+  \begin{array}{l l}
+    \text{Types}\quad     \tau &\bnfeq \alpha \bnfor \iota \bnfor \tau \to \tau \bnfor \forall\alpha.\tau
+    \bnfor \overline{C\overline{\alpha}}\then\tau \bnfor T \overline{\tau}\\
+    \text{Terms}\quad             M, N &\bnfeq x \bnfor \App M N \bnfor \Lam x M \bnfor \Let x M N\\
+  \end{array}
+  \]
+  \caption{Type classes with Functional Dependencies}
+  \label{fig:ty-fd-formal}
+\end{figure}
+
+\begin{figure}
+
+  \[
+    \begin{array}{l l l}
+      \ib{\irule[\trule{\I\to}]
+          {\typing \Preds \TEnv {M_1} {\tau_1}}
+          {\typing \Preds \TEnv {M_2} {\tau_2}};
+          {\typing \Preds \TEnv {(M_1, M_2)} {\tau_1 \ast \tau_2}}}
+ & &
+    \end{array}
+  \]
+
+  
+  \caption{Typing judgments}
+  \label{fig:ty-fd-typing}
+\end{figure}
+
+
+\subsection{Implementing Improvement and Consistency}
+We would want to have an algorithm that can detect inconsistent instance declarations using the the functional
+dependencies.
+
+
+\section{Type Families}
+Type family is a powerful mechanism of describing computation on types in a more
+natural style of equations. They are types that are parameterized by other types
+and specify when two types are equal using type level equations.
+For example, we can now define addition over the two previously mentioned types !Z! and !S n!
+as shown in \pref{fig:add-ty-fam}. This style is a lot more palpable for programmers
+who are already used to writing equations at term level.
+It also has a cleaner view and has less code clutter.
+
+\begin{figure}[ht]
+  \begin{tabular}{l r}
+    \begin{code}
+      type family Add n m
+      type instance  Add Z     m = m
+      type instance  Add (S n) m = S (Add n m)
+    \end{code}
+  \end{tabular}
+  \caption{Peano Arithmetic with Type Family}
+  \label{fig:add-ty-fam}
+\end{figure}
+
+\subsection{Open Type Families and Associated Types}
+The origins of type families can be traced back to another potential solution for relating
+types. In this scheme, each class would optionally get an additional associated type and the instance
+would instantiate it to a concrete type as shown in \pref{fig:asso-tyfam}.
+The !Add! type class has an associated !Result! type that depends on the type parameters
+of the class. This solution comes at a price of making the core language more complex.
+We would have to introduce a type equality constraints (!a ~ b!) into
+the type language and introduce a coercion term into the term language. The coercion term
+is a witness to the fact that the type equality that holds is valid.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l}
+    \begin{code}
+      class Add m n where
+         type Result m n
+         (+) :: m -> n -> Result m n
+
+      instance Add Int Int where
+         type Result Int Int = Int
+         (+) = intAdd
+    \end{code}&%
+    \begin{code}
+      instance Add Int Float where
+         type Result Int Float = Float
+         i + f = addFloat (int2Float i) f
+
+      instance Add Int Float where
+         type Result Int Float = Int -- Error!
+         i + f = addInt i (float2int f)
+    \end{code}
+  \end{tabular}
+  \caption{Associated Type Family}
+  \label{fig:asso-tyfam}
+\end{figure}
+
+\subsection{Closed Type Families}
+Consider an open type family !Eq u u! as shown in \pref{fig:eq-ty-fam}.
+This is inconsistent as equations overlap. A solution for allowing such overlapping
+instances, is by declaring closed type families. The compromise we make is by enforcing
+that closed type families cannot be extended. The rewriting for such a type family
+is performed my matching equations from top to bottom.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l l}
+    \begin{code}
+      data TT
+      data FF
+    \end{code}&%
+    \begin{code}
+      type family TEq a b
+      type instance TEq a a = TT
+      type instance TEq a b = FF -- Error!
+    \end{code}&%
+    \begin{code}
+      type family TEq a b where
+          TEq a a = TT
+          TEq a b = FF  -- Ok
+    \end{code}
+  \end{tabular}
+  \caption{Open and Closed \texttt{TEq a b} Type family}
+  \label{fig:eq-ty-fam}
+\end{figure}
+
+
+\subsubsection{Apartness of types}
+Overlapping can be understood in terms of apartness criterion. Apartness can be defined formally as follows:
+\begin{definition}[Apartness]\label{def:apartness}
+  Types $\tau_1$  and $\tau_2$ are apart if there exists no substitution $S$ such that
+  $S\tau_1 = S\tau_2$
+\end{definition}
+
+\subsection{Constraint Type families}
+In the previous account of open and closed type families, we have made an implicit assumption---
+the type families are all total, in the sense their domain is all the types.
+In the semantics of open type families, we leave the door open for the programmer to
+add type family instances while in closed type families we do not. What about the case
+where a closed type family is not defined for particular instance? For example consider
+the closed type family shown in \pref{fig:incomplete-tyfam}. We know that !PTyFam Bool!
+has no satisfying equations associated with it and never will in the future.
+Hence, we should be able to reject such a type right away.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l}
+    \begin{code}
+      type family PTyFam a where
+          PTyFam Int = Bool
+    \end{code}&%
+    \begin{code}
+      pty :: PTyFam Bool -- OK?
+      pty = undefined
+    \end{code}
+  \end{tabular}
+  \caption{Partial Closed Type Family}
+  \label{fig:incomplete-tyfam}
+\end{figure}
+
+\section{Conclusion and Future Work}
+From a birds eye view, typeclasses with functional dependencies and type families are trying to achieving the same
+goal---computation on types. While functional dependencies have a flavor of relations, type families have a flavor of
+equations. This equational notation for type families seems to be one of the reasons why type families have gained
+more popularity in recent years. A formal proof about the equality of the expressive power of functional dependencies and
+type families is still an open problem\cite{}
+
+It is possible to encode type computations that are non-terminating in both type families and simple type classes.
+
+\begin{figure}[ht]
+  \begin{tabular}{l l}
+    \begin{code}
+      type family Loop
+      type instance Loop = [Loop]
+      loop :: Loop
+    \end{code}&%
+  \begin{code}
+    class Loopy [a] => Loopy a
+    
+    loop :: Loop a => a
+  \end{code}
+  \end{tabular}
+  \caption{Non-terminating Type Computation}
+  \label{fig:non-termination}
+\end{figure}
+As a feature, non-termination of a type checker may not be a very useful one. After all, we do want
+the type checker to terminate and say if a program is welltyped or not.
+
+Another valid question is if functional dependencies can be emulated using type families, thus each functional
+dependency declaration can be syntactically transformed into a type family. This would significantly simplify
+the core of the language that might want to support both, functional dependencies and type families. There has
+been some recent work\cite{karachalias_elaboration_2017} in this direction, however, it remains an open problem
+and there has been no implementation of the formalization yet. 
+
+\newpage
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{typeclasses}
+
+\end{document}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

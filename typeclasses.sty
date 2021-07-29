@@ -1,0 +1,113 @@
+\usepackage{enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy}
+
+% Math theorems 
+\newtheorem{theorem}{Theorem}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{property}[theorem]{Property}
+\theoremstyle{definition}
+\newtheorem{defn}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+% Pretty references
+\usepackage{prettyref}
+\newcommand{\pref}[1]{\prettyref{#1}}
+\newrefformat{assn}{Assumption~\ref{#1}}
+\newrefformat{prop}{Property~\ref{#1}}
+\newrefformat{fig}{Figure~\ref{#1}}
+\newrefformat{sec}{Section~\ref{#1}}
+\newrefformat{thm}{Theorem~\ref{#1}}
+\newrefformat{lem}{Lemma~\ref{#1}}
+
+% Names & utils for Typing rules
+\newcommand\ib[1]{\infbox{#1}}
+\newcommand\isp{\hspace{\infskip}}
+\newcommand\rsp{\hspace{1.5\infskip}}
+\newcommand\trule[1]{\textsc{(#1)}}
+\newcommand\erule[1]{\textsc{\{#1\}}}
+\newcommand\I[1]{\ensuremath{\mathord{#1}}\!~I}
+\newcommand\E[1]{\ensuremath{\mathord{#1}}\!~E}
+
+
+% Types and judgements
+\newcommand\TEnv{\Gamma}
+\newcommand\KEnv{\Delta}
+\newcommand\type{\tau}
+\newcommand\KType{\star}
+\newcommand\KPred{\mathsf{o}}
+\newcommand\Preds{P}
+\newcommand\MorePreds{Q}
+\newcommand\typing[4]{#1 \mid #2 \vdash #3 : #4}
+\newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
+\newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
+\newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
+\newcommand{\clsargs}[1]{#1 \to \mathsf{pred}}
+\newcommand\clsargkis[1]{#1 \to \KPred}
+\newcommand{\clss}{L}
+\newcommand{\tconst}{C}
+\newcommand{\bnfeq}{\mathrel{{:}{:}{=}}}
+\newcommand{\bnfor}{\mathrel{\mid}}
+\newcommand{\empt}{\epsilon}
+
+% commonly used math symbols
+\newcommand{\STAR}{\ast}
+\newcommand{\then}{\Rightarrow}
+\def\entails{\vdash\hspace{-0.7ex}\vdash}
+\def\ent#1#2{#1 \entails #2}
+\def\ctsfun{\twoheadrightarrow}
+\def\setfun{\rightarrowtail}
+\def\TV#1{TV(#1)}
+\def\co{{:}}% thin colon
+\def\dom#1{dom(#1)}
+\newcommand\Set[1]{\ensuremath{\{#1\}}}
+\newcommand\Tuple[1]{\ensuremath{\langle #1 \rangle}}
+\newcommand\pto{\ensuremath{\rightharpoonup}}
+
+% Term Syntax
+\newcommand{\App}{\,}
+\newcommand{\Let}[3]{\mathsf{let}\;#1 = #2\;\mathsf{in}\;#3}
+\def\Lam#1#2{\lambda #1 . #2}
+
+
+% Haskell listings
+\usepackage{listings}
+\lstloadlanguages{Haskell}
+\lstset{
+  xleftmargin=\parindent,
+  basicstyle=\ttfamily,
+  keepspaces=true,
+  keywordstyle=\bfseries,%\underbar,
+  numberstyle=\tiny,
+  flexiblecolumns=false,
+  basewidth={0.5em,0.45em},
+  morekeywords={instance, class, if, where, data, then, else, type, case, of, require, linear, primitive, newtype, family},
+  morecomment=[l]{--},
+  mathescape=true,
+  literate={+}{{$+$}}1 {/}{{$/$}}1 {*}{{$\STAR$}}1 {=}{{$=$}}1
+%    {/=}{{$\not=$}}2
+    {>}{{$>$}}1 {<}{{$<$}}1 {\\}{{$\lambda$}}1
+    {\\\\}{{\char`\\\char`\\}}1 {\\"}{{\char`\\"}}2
+    {->}{{$\to$}}2 {-@}{{$\lto$}}2 {>=}{{$\geq$}}2 {<-}{{$\leftarrow$}}2
+    {<=}{{$\leq$}}2 {=>}{{$\Rightarrow$}}2
+    {\ .\ }{{$\circ$}}3
+    {>>}{{$>\!\!>$}}2 {>>=}{{$>\!\!>\!=$}}3 {>>>}{{$>\!\!>\!\!>$}}3
+    {|}{{$\mid$}}1
+    {...}{{$\dots$}}3
+    {->>}{{$\ctsfun$}}2
+    {+->}{{$\setfun$}}2
+    {||-}{{$\entails$}}2
+    {@}{{$@$}}1
+    {~~>}{{$\leadsto$}}2
+    {TYPE}{{$\KType$}}1
+    {CONSTRAINT}{{$\KPred$}}1
+    {_i}{{$\!_i$}}1
+}
+\lstnewenvironment{code}{}{}
+\lstMakeShortInline{!}
+\lstnewenvironment{codef}{\lstset{basicstyle=\ttfamily\small,xleftmargin=1.5em}}{}
+
+\newcommand{\Type}{\texttt{Type}}
+
+\newenvironment{syntax}%
+{\[\begin{array}{@{}lr@{\hspace{5px}}r@{\hspace{5px}}l@{}}}
+{\end{array}\]\ignorespacesafterend}
