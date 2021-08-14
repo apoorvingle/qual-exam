@@ -1,4 +1,37 @@
-\usepackage{enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy}
+\usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,parskip,xspace}
+
+%% no spaces for enumeration
+\setlist{nosep}
+\setlist{nolistsep}
+
+\makeatletter
+\DeclareFontFamily{U}{tipa}{}
+\DeclareFontShape{U}{tipa}{m}{n}{<->tipa10}{}
+\newcommand{\arc@char}{{\usefont{U}{tipa}{m}{n}\symbol{62}}}%
+
+\newcommand{\arc}[1]{\mathpalette\arc@arc{#1}}
+
+\newcommand{\arc@arc}[2]{%
+  \sbox0{$\m@th#1#2$}%
+  \vbox{
+    \hbox{\resizebox{\wd0}{\height}{\arc@char}}
+    \nointerlineskip
+    \box0
+  }%
+}
+
+
+%% citation style and ACM nonsense
+\citestyle{acmauthoryear}
+\setcitestyle{sort&compress}
+\setcopyright{none}
+
+%% Names for systems
+\newcommand{\TCFD}{System \textbf{TCFD} }
+\newcommand{\CLTF}{System \ensuremath{\mu\textbf{FC}} }
+\newcommand{\QLTF}{System \ensuremath{\mathcal Q\textbf{FC}} }
+
+\newcommand{\FC}{System \textbf{FC}}
 
 % Math theorems 
 \newtheorem{theorem}{Theorem}
@@ -16,6 +49,7 @@
 \newrefformat{prop}{Property~\ref{#1}}
 \newrefformat{fig}{Figure~\ref{#1}}
 \newrefformat{sec}{Section~\ref{#1}}
+\newrefformat{subsec}{Section~\ref{#1}}
 \newrefformat{thm}{Theorem~\ref{#1}}
 \newrefformat{lem}{Lemma~\ref{#1}}
 
@@ -28,26 +62,38 @@
 \newcommand\I[1]{\ensuremath{\mathord{#1}}\!~I}
 \newcommand\E[1]{\ensuremath{\mathord{#1}}\!~E}
 
+% Static semantics
 
 % Types and judgements
 \newcommand\TEnv{\Gamma}
-\newcommand\KEnv{\Delta}
-\newcommand\type{\tau}
-\newcommand\KType{\star}
-\newcommand\KPred{\mathsf{o}}
+\newcommand\GEnv{\Sigma}
+\newcommand\VEnv{\Delta}
+\newcommand\Ty{\tau}
+\newcommand\GTy{\omega}
+
 \newcommand\Preds{P}
 \newcommand\MorePreds{Q}
-\newcommand\typing[4]{#1 \mid #2 \vdash #3 : #4}
-\newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
-\newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
-\newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
-\newcommand{\clsargs}[1]{#1 \to \mathsf{pred}}
-\newcommand\clsargkis[1]{#1 \to \KPred}
-\newcommand{\clss}{L}
-\newcommand{\tconst}{C}
+
+\newcommand\QTyping[4]{#1 \mid #2 \vdash #3 : #4}
+\newcommand\Typing[3]{#1 \vdash #2 : #3}
+\newcommand\CoTyping[3]{#1 \vdash_{Co} #2 : #3} %% FIXME the subscripts
+\newcommand\GCtxValid[1]{\vdash_{gnd}#1}
+\newcommand\VCtxValid[2]{#1\vdash_{var}#2}
+\newcommand\CtxValid[1]{\vdash_{Ctx}#1}
+
+\newcommand\ValidType[2]{#1 \vdash #2 \text{ type}}
+\newcommand\ValidProp[2]{#1 \vdash #2 \text{ prop}}
+% \newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
+% \newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
+% \newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
+\def\fresh#1#2{#1 \# #2}
+
 \newcommand{\bnfeq}{\mathrel{{:}{:}{=}}}
 \newcommand{\bnfor}{\mathrel{\mid}}
 \newcommand{\empt}{\epsilon}
+
+\newcommand{\Gen}[2]{\text{Gen}(#1, #2)}
+\newcommand{\Ins}[1]{\text{Inst}(#1)}
 
 % commonly used math symbols
 \newcommand{\STAR}{\ast}
@@ -59,15 +105,75 @@
 \def\TV#1{TV(#1)}
 \def\co{{:}}% thin colon
 \def\dom#1{dom(#1)}
+\def\mgu#1#2{mgu(#1,#2)}
 \newcommand\Set[1]{\ensuremath{\{#1\}}}
 \newcommand\Tuple[1]{\ensuremath{\langle #1 \rangle}}
 \newcommand\pto{\ensuremath{\rightharpoonup}}
+\newcommand\setdiff{\backslash}
+\newcommand\fundep[1]{\texttt{FD}_\texttt{#1}}
+\newcommand\closure[2]{{#1}^{+}_{#2}}
+\newcommand\impr[1]{impr(#1)}
+\newcommand\satisfyable[1]{\floor{#1}}
+\newcommand\Subst{\Omega}
+\newcommand\teq{\mathrel{\sim}}
+\newcommand\lhs[1]{\text{lhs}_{#1}}
+\newcommand\rhs[1]{\text{rhs}_{#1}}
+\def\many#1{\overline{#1}}
 
-% Term Syntax
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+% Coercion language
+\def\refl#1{\langle#1\rangle}
+\def\comp#1#2{#1 \circ #2}
+\def\refl#1{\langle#1\rangle}
+\def\sym#1{\arc{#1}}
+\def\Axiom{\xi}
+\def\branch#1#2{\Axiom_{#1}{#2}}
+\def\nth#1#2{\text{nth}_{#1}~{#2}}
+\def\Co{\gamma}
+\def\MoreCo{\eta}
+\def\Prop{\phi}
+\def\AxiomEq{\Phi}
+\def\AxiomTy{\Psi}
+
+%% Types and Term Syntax
+\def\Tm{e}
+\def\Lam#1#2#3{\lambda #1\co#2.\App #3}
+\def\TLam#1#2{\Lambda #1.\App #2}
 \newcommand{\App}{\,}
 \newcommand{\Let}[3]{\mathsf{let}\;#1 = #2\;\mathsf{in}\;#3}
-\def\Lam#1#2{\lambda #1 . #2}
+\newcommand{\Case}[2]{\mathsf{case}\;#1\;\mathsf{of}\;#2}
+\def\Forall#1#2{\forall#1.~#2}
 
+\newcommand{\ClassCtrs}{\texttt{C}}
+\newcommand{\TypeCtrs}{\texttt{T}}
+\newcommand{\DataCtrs}{\texttt{D}}
+\newcommand{\FamCtrs}{\texttt{F}}
+\newcommand\Ptrns{\texttt{M}}
+\def\FamPattern{\texttt{N}}
+
+\def\cast#1#2{#1\mathrel{\blacktriangleright}#2}
+\def\noconflict{\texttt{no\_conflict}}
+\def\nc#1#2#3#4{\noconflict(#1, #2, #3, #4)}
+\def\fails{\texttt{fails}}
+\def\apart#1#2{\texttt{apart}(#1, #2)}
+\def\compat#1#2{\texttt{compat}(#1, #2)}
+\def\match#1#2{\texttt{match}(#1, #2)}
+\def\flatten#1{\texttt{flatten}(#1)}
+\def\Good{\texttt{Good}}
+% Type rewriting
+\def\TEvalCtxt#1{\mathcal{C}[#1]}
+\def\tystepsto#1#2#3{#1 \vdash #2 \rightsquigarrow #3}
+
+% Operational Semantics
+\def\stepsto#1#2{#1 \rightsquigarrow #2}
+\def\manystepsto#1#2{#1 \rightsquigarrow^* #2}
+\def\Val{\mathcal{V}}
+
+
+% Compilation
+\def\compile#1{\llbracket#1\rrbracket}
 
 % Haskell listings
 \usepackage{listings}
@@ -83,8 +189,9 @@
   morekeywords={instance, class, if, where, data, then, else, type, case, of, require, linear, primitive, newtype, family},
   morecomment=[l]{--},
   mathescape=true,
-  literate={+}{{$+$}}1 {/}{{$/$}}1 {*}{{$\STAR$}}1 {=}{{$=$}}1
-%    {/=}{{$\not=$}}2
+  literate={+}{{$+$}}1 {/}{{$/$}}1 {*}{{$\STAR$}}1
+ % {=}{{$=$}}1
+ % {/=}{{$\not=$}}2
     {>}{{$>$}}1 {<}{{$<$}}1 {\\}{{$\lambda$}}1
     {\\\\}{{\char`\\\char`\\}}1 {\\"}{{\char`\\"}}2
     {->}{{$\to$}}2 {-@}{{$\lto$}}2 {>=}{{$\geq$}}2 {<-}{{$\leftarrow$}}2
@@ -111,3 +218,11 @@
 \newenvironment{syntax}%
 {\[\begin{array}{@{}lr@{\hspace{5px}}r@{\hspace{5px}}l@{}}}
 {\end{array}\]\ignorespacesafterend}
+
+\ifcomments
+\newcommand{\commentbox}[3]{{\par\noindent\small\color{#1} \framebox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\textbf{#2:} #3}}}}
+\else
+\newcommand\commentbox[3]{}
+\fi
+\newcommand{\todo}[1]{{\color{red}{TODO: }{#1}}}
+\newcommand{\AI}[1]{\commentbox{RoyalPurple}{ANI}{#1}}
