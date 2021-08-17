@@ -1,9 +1,10 @@
-\usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,parskip,xspace}
+\usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,xspace}
 \usepackage[skins,theorems]{tcolorbox}
 % \usepackage{amsthm,bibnat}
 %% no spaces for enumeration
 \setlist{nosep}
 \setlist{nolistsep}
+
 
 \makeatletter
 \DeclareFontFamily{U}{tipa}{}
@@ -149,7 +150,7 @@
 \def\TLam#1#2{\Lambda #1.\App #2}
 \newcommand{\App}{\,}
 \newcommand{\Let}[3]{\mathsf{let}\;#1 = #2\;\mathsf{in}\;#3}
-\newcommand{\Case}[2]{\mathsf{case}\;#1\;\mathsf{of}\;#2}
+% \newcommand{\Case}[2]{\mathsf{case}\;#1\;\mathsf{of}\;#2}
 \def\Forall#1#2{\forall#1.~#2}
 \newcommand\tassume[2]{\texttt{assume}~{#1}~\texttt{in}~{#2}}
 \newcommand{\ClassCtrs}{\texttt{C}}
