@@ -1,5 +1,6 @@
 \usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,parskip,xspace}
-
+\usepackage[skins,theorems]{tcolorbox}
+% \usepackage{amsthm,bibnat}
 %% no spaces for enumeration
 \setlist{nosep}
 \setlist{nolistsep}
@@ -27,11 +28,11 @@
 \setcopyright{none}
 
 %% Names for systems
-\newcommand{\TCFD}{System \textbf{TCFD} }
-\newcommand{\CLTF}{System \ensuremath{\mu\textbf{FC}} }
-\newcommand{\QLTF}{System \ensuremath{\mathcal Q\textbf{FC}} }
+\newcommand{\TCFD}{System \textbf{TCFD}\xspace}
+\newcommand{\CLTF}{System \ensuremath{\mu\textbf{FC}}\xspace}
+\newcommand{\QLTF}{System \ensuremath{\mathcal Q\textbf{FC}}\xspace}
 
-\newcommand{\FC}{System \textbf{FC}}
+\newcommand{\FC}{System \textbf{FC}\xspace}
 
 % Math theorems 
 \newtheorem{theorem}{Theorem}
@@ -40,7 +41,7 @@
 \theoremstyle{definition}
 \newtheorem{defn}[theorem]{Definition}
 \theoremstyle{remark}
-\newtheorem*{remark}{Remark}
+\newtheorem{remark}{Remark}
 
 % Pretty references
 \usepackage{prettyref}
@@ -61,39 +62,6 @@
 \newcommand\erule[1]{\textsc{\{#1\}}}
 \newcommand\I[1]{\ensuremath{\mathord{#1}}\!~I}
 \newcommand\E[1]{\ensuremath{\mathord{#1}}\!~E}
-
-% Static semantics
-
-% Types and judgements
-\newcommand\TEnv{\Gamma}
-\newcommand\GEnv{\Sigma}
-\newcommand\VEnv{\Delta}
-\newcommand\Ty{\tau}
-\newcommand\GTy{\omega}
-
-\newcommand\Preds{P}
-\newcommand\MorePreds{Q}
-
-\newcommand\QTyping[4]{#1 \mid #2 \vdash #3 : #4}
-\newcommand\Typing[3]{#1 \vdash #2 : #3}
-\newcommand\CoTyping[3]{#1 \vdash_{Co} #2 : #3} %% FIXME the subscripts
-\newcommand\GCtxValid[1]{\vdash_{gnd}#1}
-\newcommand\VCtxValid[2]{#1\vdash_{var}#2}
-\newcommand\CtxValid[1]{\vdash_{Ctx}#1}
-
-\newcommand\ValidType[2]{#1 \vdash #2 \text{ type}}
-\newcommand\ValidProp[2]{#1 \vdash #2 \text{ prop}}
-% \newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
-% \newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
-% \newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
-\def\fresh#1#2{#1 \# #2}
-
-\newcommand{\bnfeq}{\mathrel{{:}{:}{=}}}
-\newcommand{\bnfor}{\mathrel{\mid}}
-\newcommand{\empt}{\epsilon}
-
-\newcommand{\Gen}[2]{\text{Gen}(#1, #2)}
-\newcommand{\Ins}[1]{\text{Inst}(#1)}
 
 % commonly used math symbols
 \newcommand{\STAR}{\ast}
@@ -123,13 +91,51 @@
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
+
+% Static semantics
+
+% Types and judgements
+\newcommand\TEnv{\Gamma}
+\newcommand\GEnv{\Sigma}
+\newcommand\VEnv{\Delta}
+\newcommand\Ty{\tau}
+\newcommand\GTy{\omega}
+
+\newcommand\Preds{P}
+\newcommand\MorePreds{Q}
+
+\newcommand\QTyping[4]{#1 \mid #2 \vdash #3 : #4}
+\newcommand\Typing[3]{#1 \vdash #2 : #3}
+\newcommand\CoTyping[3]{#1 \vdash_{Co} #2 : #3} %% FIXME the subscripts
+\newcommand\ResTyping[3]{#1 \vdash_{res} #2 : #3}
+\newcommand\ValidGCtx[1]{\vdash_{gnd}#1}
+\newcommand\ValidVCtx[2]{#1\vdash_{var}#2}
+\newcommand\ValidCtx[1]{\vdash_{ctx}#1}
+
+\newcommand\ValidType[2]{#1 \vdash #2~\text{type}}
+\newcommand\ValidProp[2]{#1 \vdash #2~\text{prop}}
+\newcommand\ValidAssmp[2]{#1 \vdash #2~\text{asmp}}
+% \newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
+% \newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
+% \newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
+\def\fresh#1#2{#1 \# #2}
+
+\newcommand{\bnfeq}{\mathrel{{:}{:}{=}}}
+\newcommand{\bnfor}{\mathrel{\mid}}
+\newcommand{\empt}{\epsilon}
+
+\newcommand{\Gen}[2]{\text{Gen}(#1, #2)}
+\newcommand{\Ins}[1]{\text{Inst}(#1)}
+
+
 % Coercion language
 \def\refl#1{\langle#1\rangle}
 \def\comp#1#2{#1 \circ #2}
 \def\refl#1{\langle#1\rangle}
 \def\sym#1{\arc{#1}}
 \def\Axiom{\xi}
-\def\branch#1#2{\Axiom_{#1}{#2}}
+\def\branch#1#2{\Axiom_{#1}~{#2}}
+\def\qbranch#1#2#3{\Axiom_{#1}~{#2}~{#3}}
 \def\nth#1#2{\text{nth}_{#1}~{#2}}
 \def\Co{\gamma}
 \def\MoreCo{\eta}
@@ -145,7 +151,7 @@
 \newcommand{\Let}[3]{\mathsf{let}\;#1 = #2\;\mathsf{in}\;#3}
 \newcommand{\Case}[2]{\mathsf{case}\;#1\;\mathsf{of}\;#2}
 \def\Forall#1#2{\forall#1.~#2}
-
+\newcommand\tassume[2]{\texttt{assume}~{#1}~\texttt{in}~{#2}}
 \newcommand{\ClassCtrs}{\texttt{C}}
 \newcommand{\TypeCtrs}{\texttt{T}}
 \newcommand{\DataCtrs}{\texttt{D}}
@@ -162,6 +168,7 @@
 \def\match#1#2{\texttt{match}(#1, #2)}
 \def\flatten#1{\texttt{flatten}(#1)}
 \def\Good{\texttt{Good}}
+
 % Type rewriting
 \def\TEvalCtxt#1{\mathcal{C}[#1]}
 \def\tystepsto#1#2#3{#1 \vdash #2 \rightsquigarrow #3}
@@ -224,5 +231,9 @@
 \else
 \newcommand\commentbox[3]{}
 \fi
-\newcommand{\todo}[1]{{\color{red}{TODO: }{#1}}}
+\newcommand{\TODO}[1]{\commentbox{red}{TODO: }{#1}}
 \newcommand{\AI}[1]{\commentbox{RoyalPurple}{ANI}{#1}}
+
+
+\definecolor{lightgray}{gray}{0.75}
+\newcommand\shaded[1]{{#1}}

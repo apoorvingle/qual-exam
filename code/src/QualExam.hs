@@ -3,12 +3,13 @@
            , TypeOperators, GeneralisedNewtypeDeriving
            , UndecidableInstances, FlexibleInstances
            , MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts, UndecidableSuperClasses
+           , FlexibleContexts, UndecidableSuperClasses, TypeFamilyDependencies
 #-}
 
 module QualExam where
 import GHC.Float
 import Data.Proxy
+import GHC.Types
 
 data TBool = TT | FF
 data Z
@@ -72,11 +73,11 @@ type family CountArgs ty where
 cpf :: Proxy (CountArgs (Int -> Bool -> (Int -> Bool) -> Char))
 cpf = Proxy
 
-type family Loop
-type instance Loop = [Loop]
+type family Loop where
+  Loop = [Loop]
 
--- k :: TEq Loop Loop
--- k = undefined
+-- k :: (TEq [Loop] Loop ~ TT) => Bool
+-- k = True
 
 type family Elem c
 class Collects c where
@@ -111,3 +112,41 @@ instance Add Int Float where
 --   type Result Int Float = Int -- Error
 --   add = (+)
 
+
+--- Constraint Type Families
+
+-- loop :: Loop
+-- loop = loop
+
+loopy = loopy
+
+class PTyFamC a where
+  type PTyFam a :: Type
+
+instance PTyFamC Int where
+  type PTyFam Int = Bool
+
+pty :: PTyFam Bool
+pty = let loop = loop in loop
+
+type family NoEqFam a where
+  {- No Equations-}
+
+
+pty2 :: NoEqFam Int
+pty2 = undefined
+
+-- type family ListElems a = b | b -> a
+-- type instance ListElems [a] = a
+class Top
+instance Top
+
+class Top => IdTyFamC (a::Type) where
+  type IdTyFam a :: Type
+
+instance IdTyFamC a where
+  type IdTyFam a = a
+
+sillyFst x = fst (x, loopy)
+
+sillyFst' x = fst (x, pty)
