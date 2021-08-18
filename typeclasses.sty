@@ -1,10 +1,9 @@
 \usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,xspace}
-\usepackage[skins,theorems]{tcolorbox}
-% \usepackage{amsthm,bibnat}
+%\usepackage[framemethod=default]{mdframed}
+
 %% no spaces for enumeration
 \setlist{nosep}
 \setlist{nolistsep}
-
 
 \makeatletter
 \DeclareFontFamily{U}{tipa}{}
@@ -12,7 +11,7 @@
 \newcommand{\arc@char}{{\usefont{U}{tipa}{m}{n}\symbol{62}}}%
 
 \newcommand{\arc}[1]{\mathpalette\arc@arc{#1}}
-
+% fancy over arc
 \newcommand{\arc@arc}[2]{%
   \sbox0{$\m@th#1#2$}%
   \vbox{
@@ -75,6 +74,7 @@
 \def\co{{:}}% thin colon
 \def\dom#1{dom(#1)}
 \def\mgu#1#2{mgu(#1,#2)}
+\def\unify#1#2{unify(#1,#2)}
 \newcommand\Set[1]{\ensuremath{\{#1\}}}
 \newcommand\Tuple[1]{\ensuremath{\langle #1 \rangle}}
 \newcommand\pto{\ensuremath{\rightharpoonup}}
@@ -157,18 +157,19 @@
 \newcommand{\TypeCtrs}{\texttt{T}}
 \newcommand{\DataCtrs}{\texttt{D}}
 \newcommand{\FamCtrs}{\texttt{F}}
+\newcommand{\MoreFamCtrs}{\texttt{G}}
 \newcommand\Ptrns{\texttt{M}}
 \def\FamPattern{\texttt{N}}
 
 \def\cast#1#2{#1\mathrel{\blacktriangleright}#2}
-\def\noconflict{\texttt{no\_conflict}}
+\def\noconflict{\texttt{no\_conflict}\xspace}
 \def\nc#1#2#3#4{\noconflict(#1, #2, #3, #4)}
-\def\fails{\texttt{fails}}
+\def\fails{\texttt{fails}\xspace}
 \def\apart#1#2{\texttt{apart}(#1, #2)}
 \def\compat#1#2{\texttt{compat}(#1, #2)}
 \def\match#1#2{\texttt{match}(#1, #2)}
 \def\flatten#1{\texttt{flatten}(#1)}
-\def\Good{\texttt{Good}}
+\def\Good{\texttt{Good}\xspace}
 
 % Type rewriting
 \def\TEvalCtxt#1{\mathcal{C}[#1]}
@@ -237,4 +238,4 @@
 
 
 \definecolor{lightgray}{gray}{0.75}
-\newcommand\shaded[1]{{#1}}
+\newcommand\shaded[1]{{\colorbox{lightgray}{#1}}}

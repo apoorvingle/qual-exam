@@ -3,7 +3,7 @@
 %% 2. Tables and array looks
 %% 3. Shaded box with \shaded
 
-\newif\ifcomments\commentsfalse
+\newif\ifcomments\commentstrue
 
 \RequirePackage[svgnames,dvipsnames,prologue]{xcolor}
 
@@ -34,7 +34,7 @@ can guarantee stronger claims about written programs. Enabling programmers to pe
 type level computations is a way to make the type system expressive.
 During the last three decades, for languages that support typeclasses, there have been proponents
 of two different styles of type level computations---functional dependencies and type families.
-In this paper we describe these two language features with examples, formalize them and compare them.
+In this report we describe these two language features with examples, formalize them and compare them.
 \end{abstract}
 \maketitle
 %\pagestyle{plain}
@@ -46,8 +46,7 @@ without modification has the type !$\forall$a. a -> a!.
 We also need to have some way of taming unconstrained polymorphism.
 For example, an addition operation, !add!, on all types does not necessarily make sense,
 i.e. the type !$\forall$ a. a -> a -> a! is too general for describing addition.
-Programming languages that support functions as first class citizens
-cannot get away with having unconstrained parametric polymorphism.
+Functional programming languages thus need to have constrained parametric polymorphism.
 Typeclasses\cite{wadler_polymorphism_1989} give a mechanism
 of having constrained polymorphic types to support operator overloading.
 Theory of qualified types\cite{jones_qualified_1994} formalizes the
@@ -60,14 +59,14 @@ encode computations at type level.
 % A typeclass with $n$ parameters builds an $n$-tuple relation on types.
 However, using relations to encode computations is cumbersome due to its verbosity.
 A new language feature, type families\cite{schrijvers_towards_2007}, was introduced in Haskell
-to enable expressing type functions. Type functions are stylistically
-more obvious for programmers. Naturally, enabling type families warrants a richer system of types
-which also means that ensuring type safety for such a language is nontrivial.
+to enable expressing type functions. They are stylistically
+more obvious for functional programmers. Naturally, enabling type families warrants
+a richer system of types and ensuring type safety for such a language is nontrivial.
 % The types in this system include a special type called coercion. A coercion is an evidence
 % that states equality between types. 
 
-The scope of the current article is as follows.
-We give examples with intuitive set semantics for typeclasses in the beginning of \pref{sec:tc},
+The scope of the current article is as follows:
+we first give examples and intuitive set semantics for typeclasses in the beginning of \pref{sec:tc},
 and then describe functional dependencies\cite{jones_tcfd_2000} with some examples in \pref{subsec:fd}.
 We formalize them in \pref{subsec:tc-formal} and describe their consequences % of introducing
 % functional dependencies by improving type inference and detecting ambiguous types
@@ -115,7 +114,7 @@ have to ensure every instance of !Ord a! has the necessary !Eq a! instance defin
 {    \footnotesize
   \begin{tabular}{l l l}
 \begin{code}
-class Eq a => Ord awhere
+class Eq a => Ord a where
   (<=) :: a -> a -> Bool
 \end{code}&%
 \begin{code}
@@ -158,13 +157,13 @@ instance TEq Int Int
 \end{code}&%
 \begin{code}
 instance TEq Char Char
-\end{code}\\
-          &
-\begin{code}
-instance (TEq a1 b1, TEq a2 b2)
-  => TEq (a1, a2) (b1, b2)
-\end{code}
-          &                
+\end{code}% \\
+%           &
+% \begin{code}
+% instance (TEq a1 b1, TEq a2 b2)
+%   => TEq (a1, a2) (b1, b2)
+% \end{code}
+%           &                
   \end{tabular}
   \caption{Multiparameter Typeclasses}
   \label{fig:multip-typeclass}
@@ -174,7 +173,7 @@ instance (TEq a1 b1, TEq a2 b2)
 % In this view, we are no longer using typeclasses to give an implementation of polymorphic
 % functions at specific types. Its sole purpose is to define a predicate (or a relation) on types. 
 We can describe !Add! and !TEq! in simple set semantics as, $\texttt{Add} = \Set{(Int, Int, Int), (Int, Float, Float)}$
-and $\texttt{TEq} = \Set{(Int, Int),(Char, Char)} \cup \Set{((\tau_1, \tau_2) , (\tau'_1,\tau'_2)) \mid (\tau_1, \tau'_1)\in \texttt{TEq} \land (\tau_2, \tau'_2)\in \texttt{TEq}}$.
+and $\texttt{TEq} = \Set{(Int, Int),(Char, Char)}$. %\cup \Set{((\tau_1, \tau_2) , (\tau'_1,\tau'_2)) \mid (\tau_1, \tau'_1)\in \texttt{TEq} \land (\tau_2, \tau'_2)\in \texttt{TEq}}$.
 
 %% What problems do they introduce?
 Multiparameter typeclasses, while being powerful are problematic in practice.
@@ -183,11 +182,9 @@ Declaring !Add Int Float Float! and !Add Int Float Int!
 would be conflicting as the type inference algorithm will no longer be able to resolve
 the overloaded operator !+!. The situation gets worse as the type error would be raised
 at the use of the overloaded operator confusing the programmer about the
-cause of the issue. However, there may be cases where we do would want to allow such overlapping definitions as well.
-Consider a class !Convert a b! that converts a type !a! to a type !b!. All four instances of this class---
-!Convert Int Char!, !Convert Char Int! !Convert Int Int! and !Convert Char Char!---are valid.
-The issue is that the type system has no mechanism to identify if overlapping instances
-are inconsistent so that it can disallow them at compile time.
+cause of the issue. Such overlapping class instances are not always bad and sometimes
+we do need them. The issue is that the type system has no mechanism to identify if overlapping instances
+are inconsistent because the programmers cannot express it so that it can disallow them at compile time.
 
 \subsection{Functional Dependencies with Examples}\label{subsec:fd}
 %% How does this solve the previous problem
@@ -365,7 +362,7 @@ We write $M[\many{x}/\many{y}]$ to denote the substitution where each variable
 $x_i$ is mapped to $y_i$ in $M$. Alternatively we also
 write $\Subst X$ for an substitution $\Subst$ applied to object $X$.
 We denote the most general unifier for two types $\tau_1$ and $\tau_2$ (if it exists),
-by $\mgu {\tau_1} {\tau_2}$\cite{robinson_machine-oriented_1965}. For the sake of convenience,
+by $\mgu{\tau_1}{\tau_2}$\cite{robinson_machine-oriented_1965}. For the sake of convenience,
 we would also write $\mgu{\many{\tau_1}}{\many{\tau_2}}$ to give us a composition of most general
 unifier for each pairs of types $(\tau_{1i}, \tau_{2i})$.
 % We abbreviate the $\ClassCtrs\many\alpha$ as $\Preds$ and $\MorePreds$
@@ -384,7 +381,7 @@ For example, for a typeclass declaration !class Add m n p | m n -> p!,
 we have, $t = (a, b, c)$, $\fundep{Add}=$!$\{$ m n -> p $\}$!, $\TV{C} = \Set{m, n, p}$.
 For the functional dependency !m n -> p!, we have, $t_X = {(\texttt{m},\texttt{n})}$ and $t_Y = {(\texttt{p})}$.
 Given a set of functional dependencies $\texttt{J}$, we define the closure operation,
-\TODO{fix this definition. It seems broken}
+\TODO{fix this definition? It seems broken}
 $\closure Z {\texttt{J}}$, on $Z \subseteq t$, to be equal to all the type parameters
 that are determined by set of the functional dependencies \texttt{J}.
 Thus, $\closure {\Set{p}} {\fundep{Add}} = \Set{p}$,
@@ -531,7 +528,7 @@ Each typeclass declaration introduces a new relation on types in the type system
 we introduce some additional constraints that the instances should satisfy.
 We need to ensure that the instances declared are compatible
 with the functional dependencies associated with the typeclass.
-There are two necessary conditions to ensure this:\vspace{-1em}
+There are two necessary conditions to ensure this:
 \begin{enumerate}[topsep={0pt},partopsep={0pt}]
 \item\emph{Covering Condition}:  For each new instance declaration !instance $\Preds$ => C t where ...!
   that the user writes, we need to check that,% , for each functional dependency
@@ -572,10 +569,11 @@ dependencies, $\fundep \Preds$, on the predicate set, $\Preds$.
 For each $(X \to Y)\in\fundep{P}$
 whenever we have $\TV{t_X}$ we can infer $\TV{t_Y}$. The rational behind
 improving substitution is that it helps simplifying the type by showing its true
-and concise characterization. For example, for a given type !Add Int Float p => p!
-we know that there is a unique choice for !p! due to the functional dependency,
-thus we have an improving substitution $\Omega = [p/Float]$ which
-fixes the seemly polymorphic type variable !p! without changing its indented meaning.
+and concise characterization.
+% For example, for a given type !Add Int Float p => p!
+% we know that there is a unique choice for !p! due to the functional dependency,
+% thus we have an improving substitution $\Omega = [p/Float]$ which
+% fixes the seemly polymorphic type variable !p! without changing its indented meaning.
 Improving substitutions also affects the way ambiguous types are detected.
 For a qualified type, $\forall\many{\alpha}.\Preds\then\tau$, the usual ambiguity
 check is $(\many{\alpha}\cap\TV{P}) \subseteq \TV{\tau}$. However, with induced functional dependencies $F_P$
@@ -584,15 +582,8 @@ We thus weaken the check to ensure that there might be some type variables $\alp
 functional dependencies due to the class constraints. This improving substitution can be applied
 anywhere during the type inference algorithm without adversely affecting it.
 
+
 \subsection{Type safety of \TCFD{}}\label{subsec:tcfd-safety}
-The system that has been described has been in terms of its static semantics.
-For the static semantics to be of any real use, We also need to provide an important property
-of the system in the spirit of \cite{milner_theory_1978}---``Well typed programs
-don't go wrong.''---or if our type system says a program is well typed, then if we run the program,
-it should not crash (or get stuck). Before we can formalize type safety, we formalize
-what running the program means. We say a term $\Tm$ reduces $\Tm'$ or $\stepsto \Tm {\Tm'}$
-using the rules shown in \pref{fig:tcfd-opsem}.We define $\manystepsto {\bullet} {\bullet}$ as a transitive closure of
-the $\stepsto{\bullet}{\bullet}$ relation.
 \newcommand\AppR{
   \ib{\irule[\trule{s-app}]
     {\stepsto {\Tm_1} {\Tm'_1}};
@@ -613,9 +604,20 @@ the $\stepsto{\bullet}{\bullet}$ relation.
   \caption[\TCFD Operational Semantics]{Small Step Operational Semantics for \TCFD}
   \label{fig:tcfd-opsem}
 \end{figure}
+
+The system that has been described has been in terms of its static semantics.
+For the static semantics to be of any real use, we also need to provide an important property
+of the system in the spirit of \cite{milner_theory_1978}---``Well typed programs
+don't go wrong.''---or if our type system says a program is well typed, then if we run the program,
+it should not crash (or get stuck). Before we can formalize type safety, we formalize
+what running the program means. We say a term $\Tm$ reduces $\Tm'$ or $\stepsto \Tm {\Tm'}$
+using the rules shown in \pref{fig:tcfd-opsem}.
+We define $\manystepsto {\bullet} {\bullet}$ as a transitive closure of the $\stepsto{\bullet}{\bullet}$ relation.
+
 \begin{lemma}[Progress \TCFD{}]\label{lem:tcfd-prog}
   If $\QTyping \empt \empt {\Tm_1} \tau$ then $\Tm_1 \in \Val$ or $\stepsto {\Tm_1} {\Tm_2}$.
 \end{lemma}
+
 \begin{lemma}[Preservation \TCFD{}]\label{lem:tcfd-preserve}
   If $\QTyping \empt \empt {\Tm_1} \tau$ and $\stepsto {\Tm_1} {\Tm_2}$ then $\QTyping \empt \empt {\Tm_2} \tau$
 \end{lemma}
@@ -624,6 +626,7 @@ the $\stepsto{\bullet}{\bullet}$ relation.
 %   If $\QTyping \Preds {\TEnv,x\co\tau_2} {\Tm_1} {\tau_1}$ and $\QTyping \Preds \TEnv {\Tm_2} {\tau_2}$ then
 %   $\QTyping {\Preds} {\TEnv} {\Tm_1[x/\Tm_2]} \tau_1$
 % \end{lemma}
+
 The (syntactic) type safety of the system can formally be given as
 \begin{lemma}[Type Safety \TCFD{}]
   If $\QTyping \empt \empt \Tm \tau$ then either $\Tm \in \Val$ or there exists a term, $\Tm'$, such that
@@ -795,7 +798,8 @@ language for GHC is close to Hindley-Milner language which may not mention any t
 All the coercions thus have to be inferred by the type checker while compiling
 the source language into to core language. 
 \begin{figure}[ht]
-    \footnotesize
+  \footnotesize
+  \TODO{may be don't include this example? but i like them :(}
   \begin{tabular}{l l}
 \begin{code}
 data Leaf a
@@ -823,14 +827,14 @@ type family CountArgs ty where
   \label{fig:tf-closed-examples}
 \end{figure}
 
-<The closedness of type families come from the syntax level restriction
+The closedness of type families come from the syntax level restriction
 where the programmer is not allowed to add any more equations to the type family once
 they are defined. % As evident from the !TEq! example, they can very well be
 % used for any new types that may subsequently be defined without any issues. 
 The utility of closed type families is further elucidated with the examples
 given in \pref{fig:tf-closed-examples}. !CountArgs! computes the number of arguments that a type expects while
 !TMember! can be used to check if a given type exists in a complex type data structure.
-The key take away is that closed type families make it easier to define functions on types
+The advantage of such a restriction is that it makes it easier to define functions on types
 that would otherwise need some complex encoding, or a type checker which supports backtracking.
 
 \subsection{Type Matching and Apartness}\label{subsec:tf-closed-apartness}
@@ -839,8 +843,8 @@ Instantiating one of these axiom would give us coercions which can be
 used as an evidence for equality between two types. We say that a target type $\tau$
 reduces to or evaluates to another type $\tau_1$ when we can
 find such an evidence. We say a rule is fired when a certain type family rule is used
-to generate a coercion evidence term. For example, the target type !Int -> Float -> Result Int Float!
-reduces to or evaluates to !Int -> Float -> Float! with the rule !Result a Float = Float! being fired.
+to generate a coercion evidence term. % For example, the target type !Int -> Float -> Result Int Float!
+% reduces to or evaluates to !Int -> Float -> Float! with the rule !Result a Float = Float! being fired.
 before we dive into the formalization of this system, there are some subtle details about
 the static semantics of type reduction that we ought to mention.% informally as we need the system to be consistent.
 
@@ -848,9 +852,8 @@ The type rewriting is performed by using a top to bottom target matching procedu
 where the first instance of the left hand side that matches is used to rewrite the type.
 This enables the type equations to possibly have have overlapping left hand sides of the equations.  
 The type family definition of !TEq a b! indeed has overlapping equations with !Eq a a! and !Eq a b!.
-The type !TEq a a! is non-linear as it mentions the type variable !a! twice.
-Overlapping equations and non linear patterns introduce some complexity in the system, but it also
-enhances usability. There are two restrictions on the type patterns
+Overlapping equations introduce some complexity in the system, but it also enhances usability. 
+There are two restrictions on the type patterns
 (1) it should  have the same length as the arity of the type family constructor, and
 (2) the type patterns can not have occurrences of type family constructors.
 The first condition is necessary to avoid having partially applied type families in our system,
@@ -900,9 +903,9 @@ We instead use the following definition of apartness using type flattening defin
   % then $\flatten\tau =$!$\alpha_1$ -> $\alpha_2$ -> $\alpha_2$ -> $\beta$!
   % with $[\alpha_1/\texttt{F b c}, \alpha_2/\texttt{F a b}, \beta/\texttt{F c b}]$.
 \end{defn}
-Now apartness of types and dually matching can be defined as:
+Now apartness of types and matching can be defined as:
 \begin{defn}[Apart and Matching]\label{def:apart-match-ty}
-  We say two types, $\tau_1$ and $\tau_2$ are apart if $\mgu{\tau_1}{\flatten{\tau_2}}\fails$ and $\tau_1$ does not
+  We say two types, $\tau_1$ and $\tau_2$ are apart if $\unify{\tau_1}{\flatten{\tau_2}}\fails$ and $\tau_1$ does not
   mention type family constructors and dually, $\match{\tau_1}{\tau_2} = \lnot\apart{\tau_1}{\tau_2}$
 \end{defn}
 Simplification of type families just by using apartness criterion is too restrictive,
@@ -916,7 +919,7 @@ We formalize the notion of compatibility of equations below:
   if there exist two substitutions, $\Subst_1$ and $\Subst_2$ such that
   if $\Subst_1(\lhs{p}) = \Subst_2(\lhs{q})$ then $\Subst_1(\rhs{p}) = \Subst_2(\rhs{q})$.
 \end{defn}
-Implementing compatibility is simple. For two equations $p$ and $q$, we find $\Subst = \mgu{\lhs p, \lhs q}$.
+Implementing compatibility is simple. For two equations $p$ and $q$, we find $\Subst = \unify{\lhs p, \lhs q}$.
 If the call to unification fails, then the equations are compatible vacuously else if we do find a substitution,
 we check if $\Subst\rhs p = \Subst\rhs q$. 
 \begin{defn}[Closed Type Family Simplification]\label{def:cft-simpl}
@@ -930,7 +933,7 @@ we check if $\Subst\rhs p = \Subst\rhs q$.
   \end{enumerate}
 \end{defn}
 
-\TODO{talk about infitary unification}
+\TODO{talk about infitary unification?}
 
 \subsection{Formalizing Closed Type Families}\label{subsec:tf-closed-formal}
 
@@ -938,7 +941,7 @@ we check if $\Subst\rhs p = \Subst\rhs q$.
     \footnotesize
   \[
     \begin{array}{l l l}
-      &\text{Type family Constructors} &\texttt{\FamCtrs}\\
+      &\text{Type family Constructors} &\texttt{\FamCtrs},\texttt{\MoreFamCtrs}\\
       &\text{Type Constructors} &\texttt{\TypeCtrs}\\      
       \\
       &\text{Type Validity}               &\ValidType \TEnv \tau\\
@@ -987,7 +990,7 @@ As the surface level language for GHC is too complex to formalize, we will forma
 of interesting language constructs. The \CLTF has coercion types ($\Co,\MoreCo$), and 
 type family constructors ($\FamCtrs$) which are different from type constructors as they differ in their
 static semantics. The axiom equations define the type rewriting strategy for a specific $\FamCtrs$.
-For example, !TEq! type family looks like $\texttt{axiomTEq}: [\forall\alpha.~{\texttt{TEq}~\alpha~\alpha} \teq \texttt{TT}
+For example, !TEq! type family looks like $\texttt{AxTEq}: [\forall\alpha.~{\texttt{TEq}~\alpha~\alpha} \teq \texttt{TT}
 , \forall\alpha\beta.~{\texttt{TEq}~\alpha~\beta} \teq \texttt{FF}]$.
 
 The typing judgments for terms in this system is a triple $\Typing\TEnv\Tm\tau$ that asserts that
@@ -998,7 +1001,7 @@ that stores all the type rewriting axioms and also necessary information for typ
 The type validity judgments along with ground context and variable context validity are given
 in \pref{fig:tf-closed-validity}. They essentially walk over the context structures
 and ensuring we do not add anything invalid and check for type and axiom well formedness by making sure
-the context is consistent by using the goodness criteron described above.
+the context is consistent by using the goodness criterion described above.
 
 \newcommand\ValidTyVar{
   \ib{\irule[\trule{v-tvar}]
@@ -1144,12 +1147,13 @@ the context is consistent by using the goodness criteron described above.
   \label{fig:tf-closed-validity}
 \end{figure}
 
-The term typing rules are standard and we skip them due to space constraints, the interesting one \trule{t-cast}.
+We show the interesting term typing rules in \pref{fig:tf-closed-typing} the rest are standard
+and we skip them due to space constraints, except the interesting one \trule{t-cast}.
 % As \CLTF is extension of \FC, we have two rules at term level, one for
 % type abstraction $\trule{t-tyabs}$ and another for type application $\trule{t-tyapp}$. These
 % rules are similar to previously described $\trule{t-abs}$ and $\trule{t-app}$ respectively
 % but describe type and term interaction.
-The rule $\trule{t-cast}$ says that a well typed term of type $\tau_1$ can be typed using a new type $\tau_2$
+It says that a well typed term of type $\tau_1$ can be typed using a new type $\tau_2$
 if there is a welltyped witness $\Co$ that casts it from type $\tau_1$ to $\tau_2$.
 The three rules $\trule{co-refl}$, $\trule{co-sym}$, and $\trule{co-trans}$ say that the
 coercions form an equivalence relation. The four rules $\trule{co-arr}$, $\trule{co-type}$,
@@ -1270,12 +1274,12 @@ where their respective instantiations with a type are also equal types.
 The most interesting rule is the behemoth, $\trule{co-axiom}$ which gives conditions as to
 when we can use a particular coercion axiom to rewrite a type. In our example of !TEq!, there are two possible
 ways in which the axiom could have been instantiated:
-$\texttt{TEq}_0[\texttt{Int}]: \texttt{TEq  Int Int} \teq \texttt{TT}$
-or $\texttt{axiomTEq}_1[\texttt{Int},\texttt{Int}]: \texttt{TEq Int Int} \teq \texttt{FF}$. But the second
+$\texttt{AxTEq}_0[\texttt{Int}]: \texttt{TEq  Int Int} \teq \texttt{TT}$
+or $\texttt{AxTEq}_1[\texttt{Int},\texttt{Int}]: \texttt{TEq Int Int} \teq \texttt{FF}$. But the second
 option would make the system unsound. The \noconflict{} check saves us from this disaster
 by allowing only the first option and rejecting the second.
-There are two ways in which the equations are in not in conflict,
-1) either the equations are compatible or 2) the equations are apart. The rules are shown in \pref{fig:tf-closed-nc}
+There are two ways in which the equations are in non-conflicting as shown in \pref{fig:tf-closed-nc}---
+1) either the equations are compatible or 2) the equations are apart.
 
 \newcommand\NcApart{
   \ib{\irule[\trule{nc-apart}]
@@ -1292,15 +1296,16 @@ There are two ways in which the equations are in not in conflict,
   \ib{\irule[\trule{compt-inc}]
     {\substack {\AxiomEq_1 = \FamCtrs(\FamPattern_1) \teq \sigma_1\\
         {\AxiomEq_2 = \FamCtrs(\FamPattern_2) \teq \sigma_2}}}
-    {\Subst = \mgu{\FamPattern_1}{\FamPattern_2}}
-    {\Subst\sigma_1 = \Subst\sigma_2};
+    {\substack{{\Subst = \unify{\FamPattern_1}{\FamPattern_2}} \\
+        {\Subst\sigma_1 = \Subst\sigma_2}}};
     {\compat{\AxiomEq_1}{\AxiomEq_2}}}
 }
+
 \newcommand\CompatDist{
   \ib{\irule[\trule{compt-dis}]
     {\substack {\AxiomEq_1 = \FamCtrs(\FamPattern_1) \teq \sigma_1\\
         {\AxiomEq_2 = \FamCtrs(\FamPattern_2) \teq \sigma_2}}}
-    {\Subst = \mgu{\FamPattern_1}{\FamPattern_2}\fails};
+    {\Subst = \unify{\FamPattern_1}{\FamPattern_2}\fails};
     {\compat{\AxiomEq_1}{\AxiomEq_2}}}
 }
 \begin{figure}[ht]
@@ -1319,7 +1324,7 @@ There are two ways in which the equations are in not in conflict,
   \ib{\irule[\trule{ty-red}]
     {\substack{\Axiom\co\AxiomTy\in\GEnv\\\ValidGCtx\GEnv}}
     {\substack{\AxiomTy = \many{\Forall{\many\alpha}\FamCtrs(\FamPattern) \teq \sigma}\\ \forall j < i. ~\nc \AxiomTy i {\many\tau} j}}
-    {\substack{\Subst=\mgu {N_i}{\many\tau}\\\tau_1 = \Subst\sigma_i}};
+    {\substack{\Subst=\unify {N_i}{\many\tau}\\\tau_1 = \Subst\sigma_i}};
     {\tystepsto \GEnv {\TEvalCtxt{\FamCtrs(\many\tau)}} {\TEvalCtxt{\tau_1}}} }
 }
 
@@ -1327,8 +1332,8 @@ There are two ways in which the equations are in not in conflict,
 We can formally specify type reduction, written as $\tystepsto\GEnv\bullet\bullet$, using
 the rule $\trule{ty-red}$. This rule says that the $i$-th equation of axiom $\Axiom$,
 $\Forall{\many\alpha}{\FamCtrs(\FamPattern_i) \teq \sigma_i}$ is used to reduce
-the target type $\FamCtrs(\many\tau)$ to type $\tau_1$. The use of $\TEvalCtxt\bullet$ is to mean
-that the rewrite can happen anywhere within the type.
+the target type $\FamCtrs(\many\tau)$ to type $\tau_1$. The \noconflict check is the same as
+discussed before and we use $\TEvalCtxt\bullet$ to mean that the rewrite can happen anywhere within the type.
 $$
 \TypeRed
 $$
@@ -1337,7 +1342,7 @@ $$
 Consistency means that we can never derive unsound equalities between ground types,
 such as $\Co:\texttt{Int}\teq\texttt{Bool}$, in the system. Ground types ($\GTy$), in our system are
 nothing but $\TypeCtrs\many\tau$, $\tau_1\to\tau_2$ and $\Forall\alpha\tau$.
-In short, they are types that do not contain type family constructors.
+% In short, they are types that do not contain type family constructors.
 % Consistency condition is necessary for our system to have progress property. 
 We say that a ground context $\GEnv$ is consistent, when for all coercions $\Co$
 such that $\CoTyping {\GEnv;\empt} {\Co} {\GTy_1 \teq \GTy_2}$ we have the following:
@@ -1458,9 +1463,9 @@ includes proving preservation and progress.
 
 For proving preservation lemma, we would have to prove term substitution lemma which, in turn,
 will require that substitutions in coercions are sound. This is given by coercion substitution lemma.
-\begin{lemma}[Coercion Substitution]\label{lem:coercion-subst}
+\begin{lemma}[Coercion Subst]\label{lem:coercion-subst}
   If $\CoTyping {\GEnv;\VEnv,\alpha,\VEnv'} {\Co} {\Preds}$ and $\ValidType {\GEnv;\VEnv} \tau$
-  then, $\CoTyping {\GEnv;\VEnv,\VEnv} {\Co[\alpha/\tau]} {\Preds[\alpha/\tau]}$
+  then, $\CoTyping {\GEnv;\VEnv,\VEnv'} {\Co[\alpha/\tau]} {\Preds[\alpha/\tau]}$
 \end{lemma}
 The most interesting case would be to prove $\trule{c-axiom}$ case, but the restrictions
 due to \noconflict{} will be enough.
@@ -1472,7 +1477,7 @@ if $\Typing \empt \Tm \tau$ and $\stepsto \Tm {\Tm'}$ then $\Typing \empt {\Tm'}
 To have progress property, it is necessary to have consistency which assumes termination of type reduction.
 \begin{lemma}[Progress \CLTF]
   If $\Typing {\Sigma;\empt} \Tm \tau$ and $\tystepsto \Sigma \bullet \bullet$ is terminating,
-  then either $\Tm$ is a value, or $\Tm$ is a coerced value of the form $\cast {\Tm'} \Co$ where $\Tm'\in\Val$
+  then either $\Tm \in \Val$, or $\Tm$ is a coerced value of the form $\cast {\Tm'} \Co$ where $\Tm'\in\Val$
   or there exists a $\Tm_1$ such that $\stepsto \Tm {\Tm_1}$.
 \end{lemma}
 
@@ -1495,7 +1500,7 @@ type family Loop where
   Loop = [Loop]
 \end{code}&%
 \begin{code}
-loopy :: forall a. a
+loopy :: $\forall$ a. a
 loopy = loopy
 sillyFst x = fst (x, loopy :: PTyFam Bool)
 sillyList x = x : x
@@ -1509,7 +1514,7 @@ Next, consider the target type !TEq [a] a!, in \CLTF, this type is not evaluated
 !FF! even though ![a]! and !a! don't have no most general unifier. The reason being there
 may be an infinite type such as !Loop! that does unify both ![a]! and !a!. As
 !Loop! unwinds infinitely to become ![[[$\ldots$[Loop]$\ldots$]]]! we will have
-!TEq [Loop] Loop! evalute to !TEq [Loop] [Loop]! which is !TT!. This justifies the
+!TEq [Loop] Loop! evaluate to !TEq [Loop] [Loop]! which is !TT!. This justifies the
 reason for not evaluating !TEq [a] a! to !FF!. However, Haskell does not have infinite ground types,
 and we thus would expect !TEq [a] a! to reduce to !FF!.
 The crux of the problem here is that we treat type families as they are type constructors (ground types).
@@ -1580,7 +1585,7 @@ class {-TOTAL-} PlusC m n where
 In the constrained type families world, every closed type family will be associated with
 a closed typeclass. Any type family without an associated typeclass will be disallowed.
 For example, see !class PTyFamC!. The type for !sillyFst! in this system is no longer
-!forall a. a -> a! but instead it is !forall a. PTyFamC Bool => a -> a!, and the type
+!$\forall$ a. a -> a! but instead it is !$\forall$ a. PTyFamC Bool => a -> a!, and the type
 checker will flag it as an error wherever it is used; there is no way to satisfy
 the instance !PTyFamC Bool!. The type family !Loop! will also need to have
 an associated typeclass !LoopC!. To declare an instance of !LoopC!
@@ -1604,28 +1609,35 @@ type families can also be lifted as seen from the !LoopC! example, it no longer
 threaten type soundness. Apartness in this system is just checking for failure of unification.
 
 \subsection{Formalizing Constrained Type Families}\label{subsec:tf-constrained-formal}
-This system is an extension of \CLTF. We have some new constructs which
+This system is similar to \CLTF except for a few new constructors that
 we highlight in \pref{fig:tf-constrained-system}. The ground context keeps track of
 two types of type family constructors, a total type family constructor of arity $n$ (written $\FamCtrs\co_\top n$)
-and a partial type family constructor of arity $n$ (written $\FamCtrs\co n$). Each equation that is introduced
-by axioms ($\Axiom$) in this system, are of the form $\Forall {\many\alpha~\many\chi}{\FamCtrs(\many\tau)\teq\sigma}$.
+and a partial type family constructor of arity $n$ (written $\FamCtrs\co n$).
+The variable environment ($\VEnv$) along with variable type bindings
+also stores coercion constraint bindings $c\co\Preds$.
+Each equation that is introduced by axioms ($\Axiom$) in this system,
+are of the form $\Forall {\many\alpha~\many\chi}{\FamCtrs(\many\tau)\teq\sigma}$.
 Both $\many\tau$ and $\sigma$ do not have occurrence of any family type constructors. 
 The equations are quantified by type variables $\many\alpha$
 and also over a new term collection evaluation assumptions $\many\chi$.
 These evaluation assumptions are of the form $\alpha|c\co\FamCtrs(\many\tau)\teq\alpha$ and read as
-``$\alpha$ such that $c$ witnesses $\FamCtrs(\many\tau)$ reduces to $\alpha$''. We use these evaluation assumptions
-to allow type families on the left hand side of the type equations written in the source program. For example,
-!F (T a) = G a! where $G$ is a type family constructor and $T$ is a vanilla type constructor will
-be compiled into an equation $\forall a~(b|c:G a \teq b).~ F~(T~a) \teq b$. Evaluation assumptions thus
-are used to support axioms that mention type families on the right hand side of the equations in source.
+``$\alpha$ such that $c$ witnesses $\FamCtrs(\many\tau)$ reduces to $\alpha$''.
+We use these evaluation assumptions to allow type families on the left hand side
+of the type equations written in the source program. For example,
+the user written type equation  !F (F' a) = G a!, where $G$ and $F'$ are type family constructors,
+will be compiled into an equation $\forall a~(b|c:G~a \teq b)(d|c:F'~a \teq d).~ F(d) \teq b$.
+% Evaluation assumptions are essential to support axioms that mention
+% type families on the right hand side of the equations in source.
 We use $\chi$ to remind us that it is more specific than $\Preds$; for any $\chi$,
 the left hand side of the type equality is always a type family and right and side is a fresh variable.
+The $\tassume\chi\Tm$ is the construct that is used while working with total type families.
+It provides a sort of an escape hatch as we are guaranteed to obtain a type family free type
+after reducing a total type family.
 
 The ground types in this system can mention type family constructors only in propositions $\Preds$.
 For example, the type !$\forall$m n. Add m n => m -> n -> Result m n! would instead be written
 as !$\forall$m n. Result m n ~ p => m -> n -> p!. This is an assertion that !Result m n! evaluates to a
 type family free type.
-
 
 \begin{figure}[ht]
     \footnotesize
@@ -1650,29 +1662,31 @@ type family free type.
     \begin{array}{l l l l l}
       &\text{Types}           &\tau,\sigma  &\bnfeq \alpha \bnfor \tau\to\tau \bnfor \Forall\alpha\tau
                                               \bnfor \FamCtrs(\many\tau) \bnfor \TypeCtrs(\many\tau)
-                                              \bnfor \shaded{\Preds\then\tau}&\\
+                                              \bnfor \text{\shaded{$\Preds\then\tau$}}&\\
       &\text{Ground Types}    &\GTy         &\bnfeq \tau\to\tau \bnfor \Forall\alpha\tau \bnfor \TypeCtrs(\many\tau)\\
       &\text{Predicates}      &\Preds       &\bnfeq \tau\teq\tau\\
-      &\text{Axiom Equations} &\AxiomEq     &\bnfeq \Forall{\many\alpha~\many\chi}{\FamCtrs(\many\tau) \teq \sigma}\\
+      &\text{Axiom Equations} &\AxiomEq     &\bnfeq \text{\shaded{$\Forall{\many\alpha~\many\chi}{\FamCtrs(\many\tau) \teq \sigma$}}}\\
       &\text{Axiom Types}     &\AxiomTy     &\bnfeq \many\AxiomEq\\
       &\text{Coercions}  &\Co,\MoreCo &\bnfeq c \bnfor \Co\to\MoreCo \bnfor \Forall\alpha\Co \bnfor \Co@\tau
                                         \bnfor \FamCtrs(\many{\Co}) \bnfor \TypeCtrs(\many{\Co})\\
       &                  &            & \bnfor \nth i \Co \bnfor \refl\tau \bnfor \sym{\Co} \bnfor \comp\Co\MoreCo
-                                        \bnfor \shaded{\Co_1\teq\Co_2\then\MoreCo}
-                                        \bnfor \qbranch{i}{\many\tau}{\many q} & \\
-      &\text{Eval Assumption}   &\chi &\bnfeq (\alpha|c : \FamCtrs\many\tau \teq \alpha) \\
-      &\text{Eval Resolution}   &q    &\bnfeq (\tau|\Co)\\      
+                                        \bnfor \text{\shaded{$\Co_1\teq\Co_2\then\MoreCo$}}
+                                        \bnfor \text{\shaded{$\qbranch{i}{\many\tau}{\many q}$}} & \\
+      &\text{Eval Assumption}   &\chi &\bnfeq \text{\shaded{$(\alpha|c : \FamCtrs\many\tau \teq \alpha)$}} \\
+      &\text{Eval Resolution}   &q    &\bnfeq \text{\shaded{$(\tau|\Co)$}}\\      
       \\
       &\text{Terms}      & \Tm        &\bnfeq x \bnfor \Lam x \tau \Tm \bnfor \Tm\App\Tm \bnfor\cast M \Co 
                                         \bnfor \TLam \alpha \Tm \bnfor \Tm\App\tau \bnfor\DataCtrs\many{e} \\
-      &                  &            & \bnfor \Lam c \Preds \Tm \bnfor \Tm \Co\bnfor \tassume\chi\Tm \\
+      &                  &            & \bnfor \text{\shaded{$\Lam c \Preds \Tm$}} \bnfor \text{\shaded{$\Tm\App \Co$}}
+                                        \bnfor \text{\shaded{$\tassume\chi\Tm$}} \\
       &\text{Values}     &\Val        &\bnfeq \Lam x \tau \Tm \bnfor \DataCtrs\many\Tm \bnfor \TLam \alpha \Tm \bnfor
-                                        \Lam c \Preds \Tm\\
+                                        \text{\shaded{$\Lam c \Preds \Tm$}}\\
       \\
       &\text{Ground Context} &\GEnv   &\bnfeq \empt \bnfor \GEnv,\Axiom\co\AxiomTy
-                                        \bnfor \GEnv,\FamCtrs\co_\top n \bnfor \GEnv,\FamCtrs\co n
+                                        \bnfor \text{\shaded{$\GEnv,\FamCtrs\co_\top n$}} \bnfor \GEnv,\FamCtrs\co n
                                         \bnfor \GEnv,\TypeCtrs \co n\\
-      &\text{Variable Context}&\VEnv  &\bnfeq \empt \bnfor \VEnv,x\co\tau \bnfor \VEnv,c\co\Preds \bnfor \VEnv,\alpha\\
+      &\text{Variable Context}&\VEnv  &\bnfeq \empt \bnfor \VEnv,\alpha \bnfor \VEnv,x\co\tau
+                                        \bnfor \text{\shaded{$\VEnv,c\co\Preds$}}\\
       &\text{Typing Context}  &\TEnv  &\bnfeq \GEnv;\VEnv\\
     \end{array}
   \]
@@ -1681,8 +1695,8 @@ type family free type.
 \end{figure}
 
 The new validity judgments reflect the above discussion. The rule \trule{v-qty} ensures
-that type equality coercions can appear only in $\Preds$. We do not have the rule \trule{v-tfctr} in this system
-to ensure ground types do not mention type family constructors as they may be partial.
+that type equality coercions can appear only in $\Preds$. We do not have the rule \trule{v-tfctr}
+in this system to ensure ground types do not mention type family constructors.
 The rule \trule{v-qtfp} replaces the rule \trule{v-tfp}. This means that arguments to type family
 constructors can mention type families and we no longer have to use special type patterns as in \CLTF's \trule{v-tfp}.
 The rule \trule{v-qgax} replaces the \trule{v-gax} that checks axiom equations are valid. This checks that the context
@@ -1770,7 +1784,7 @@ and \trule{v-resc} ensure that the evaluation resolutions are valid.
         \ValidQGndContextAxiom &      \ValidQCoVar 
     \end{array}
   \]
-  \caption{Validity Judgements for \QLTF}
+  \caption{Validity Judgments for \QLTF}
   \label{fig:tc-constrained-validity}
 \end{figure}
 
@@ -1829,7 +1843,7 @@ and \trule{v-resc} ensure that the evaluation resolutions are valid.
       \QCoApp & \QAssume
     \end{array}
   \]
-  \caption[Typing Judgments for \QLTF]{Typing Judgments \QLTF{}}
+  \caption[Selected Typing Judgments for \QLTF]{Selected Typing Judgments \QLTF{}}
   \label{fig:tf-constrained-typing}
 \end{figure}
 
@@ -1842,21 +1856,19 @@ The validity resolutions are of the form $(\tau|\Co)$ where the type $\alpha$
 in validity assumptions $(\alpha|c\co\FamCtrs(\many\tau)\teq\sigma)$ is instantiated to $\tau$ and
 $\Co$ proves the equality and instantiates $c$. This is exactly what the rule \trule{v-resc} does.
 % We write $[\chi/q]$ for a substitution where the assumption $\chi$ is substituted by $q$.
-
-The rule \trule{t-assum} is a special rule that says we are allowed to assume arbitrary applications
-of a type family that is total. We can indeed do this as a total type family is expected to reduce
-to a type family free type.
-
-
+Finally, The rule \trule{t-assum} is the special rule that says we are allowed to assume arbitrary applications
+of a type family would give us a type free type. We can indeed do this by the definition of total type family.
 
 \subsubsection{Type reduction}
-The type reduction relation is given using two rules \trule{qty-red-top} and \trule{qty-red}. The
-reduction relation is different from \CLTF in the sense that it is always guaranteed to terminate.
-This is due to the fact that we ensure applying type arguments to type families only when
-they satisfy proper constraints, thus guaranteeing a type reduction to finally obtain a type family free type.
-For total type families we are automatically guaranteed this by their definition. And due to the fact
-that type family free types do not reduce (there is no matching rule) we have termination for
-the type reduction relation.
+The type reduction relation is given using two rules \trule{qty-red-top} and \trule{qty-red}.
+The rule \trule{qty-red-top} does the heavy lifting of producing the correct substitutions
+for types ($\Subst_1$) as well as evaluation resolutions ($\Subst_2$). The correct
+equation selection is done by $\noconflict$ criterion.
+The specialty of this relation is that we ensure applying type arguments to type families only when
+they satisfy proper constraints with the use of evaluation resolutions,
+thus guaranteeing every type reduction to eventually obtain a type family free type.
+And due to the fact that type family free types do not reduce, we can prove termination,
+for the type reduction relation.
 \newcommand\QTyRed{
   \ib{\irule[\trule{qty-red}]
     {\tystepsto \GEnv {\FamCtrs(\many\tau)} {\tau_1} };
@@ -1864,9 +1876,17 @@ the type reduction relation.
 }
 \newcommand{\QTyTopRed}{
   \ib{\irule[\trule{qty-red-top}]
-    {\substack{\Axiom\co\AxiomTy\in\GEnv\\\ValidGCtx\GEnv}}
-    {\substack{\AxiomTy = \many{\Forall{\many\alpha~\many\chi}\FamCtrs(\many\tau) \teq \sigma}\\ \forall j < i. ~\nc \AxiomTy i {\many\tau} j}}
-    {\color{red}\textsf{fix me}};
+    {\substack{ {\Axiom\co\AxiomTy\in\GEnv}\\
+        {\ValidGCtx\GEnv}\\
+        {\AxiomTy_i = \Forall{\many\alpha_i~\many\chi_i}\FamCtrs(\many{\sigma_i}) \teq \sigma_0}\\
+        {\forall j < i. ~\nc \AxiomTy i {\many\tau} j}
+      }}
+    {\substack {{\many\chi_i = \many{(\alpha'|c\co\MoreFamCtrs(\many\tau')\teq\alpha')}}\\
+        {\tystepsto \GEnv {\many{\MoreFamCtrs(\Subst_1\many\tau')}} \many{\tau_0}}}}
+    {\substack {{\Subst_1 = \mgu{\many\sigma_i}{\many\tau}}\\
+        {\Subst_2 = [\many{\chi_i}/\many{\MoreFamCtrs(\Subst_1\many\tau')\teq\tau_0}]}\\
+        {\tau_1 = \Subst_1\Subst_2\sigma_0}\\
+      }};
     {\tystepsto \GEnv {\FamCtrs(\many\tau)} {\tau_1}} }
 }  
 
@@ -1883,11 +1903,11 @@ the type reduction relation.
 
 
 \subsubsection{Goodness and Consistency}\label{subsubsec:tf-constrained-goodness-consistency}
-The definition of Goodness can now be relaxed as follows:
+The definition of Goodness can now be relaxed due to simplifying apartness criteria for types.
 \begin{property}[$\Good~\GEnv$ relaxed]
   A ground context ($\GEnv$) is $\Good$, written $\Good\GEnv$ when
   the following conditions are met for all $\Axiom\co\AxiomTy\in\GEnv$ and
-  where $\AxiomTy$ is of the form $\many{\Forall{\many\alpha}\FamCtrs_i(\FamPattern_i)\teq\sigma}$:
+  where $\AxiomTy$ is of the form $\many{\Forall{\many\alpha~\many\chi}\FamCtrs_i(\FamPattern_i)\teq\sigma}$:
   \begin{enumerate}
   \item There exists an $\FamCtrs$ such that  $\forall i.~\FamCtrs_i = \FamCtrs$.
   \item The binding variables $\many\alpha$ occur at least once in the type arguments $\many\tau$,
@@ -1895,7 +1915,8 @@ The definition of Goodness can now be relaxed as follows:
   \end{enumerate}
 \end{property}
 With the reduction relation defined in previous section, and knowing that it is always terminating,
-we can use Newman's lemma to prove that type reduction is confluence. Thus we get our relaxed consistency lemma as follows:
+we can use Newman's lemma\cite{newman_theories_1942} to prove that type reduction is confluent.
+Thus we get our relaxed consistency lemma as follows:
 \begin{lemma}[Consistency] If $\Good\GEnv$ then $\GEnv$ is consistent \end{lemma}
 
 \subsection{Type safety of \QLTF}\label{subsec:tf-constrained-safety} 
@@ -1924,8 +1945,9 @@ Selected rules for term evaluation are shown in \pref{fig:tf-constrained-opsem}.
 The rule \trule{t-qres} evaluates a constraint function application similar to function application
 while the rule \trule{t-qpush} splits the inner coercion $\MoreCo$ so that it can be commuted with
 the coercion application $\Co$. The rule \trule{t-qres} is the rule that illuminates the evaluation
-for total type family constructors. The clause $\FamCtrs(\many\tau) \Downarrow q$ does what? \AI{start here}
-
+for total type family constructors. The clause $\FamCtrs(\many\tau) \Downarrow q$ says that we
+find a witness for $\FamCtrs(\tau)$ reduction to a ground type to build an appropriate evaluation resolution
+and apply it to the enclosing term.
 \begin{figure}[ht]
     \footnotesize
   \[
@@ -1936,12 +1958,10 @@ for total type family constructors. The clause $\FamCtrs(\many\tau) \Downarrow q
   \caption{Small Step Operational Semantics \QLTF}
   \label{fig:tf-constrained-opsem}
 \end{figure}
-
+We can thus state the preservation and progress for this system as follows:
 \begin{lemma}[Preservation \QLTF]
   If $\Typing \empt \Tm \tau$ and $\stepsto \Tm {\Tm'}$ then $\Typing \empt {\Tm'} \tau$
 \end{lemma}
-
-Due to constrained type family applications we can weaken the precondition on progress lemma
 \begin{lemma}[Progress \QLTF]
   If $\Typing {\Sigma;\empt} \Tm \tau$
   then either $\Tm$ is a value, or $\Tm$ is a coerced value of the form $\cast {\Tm'} \Co$ where $\Tm'\in\Val$
@@ -1969,15 +1989,15 @@ Due to constrained type family applications we can weaken the precondition on pr
 % should satisfy to aid type inference.
 
 \section{Conclusion and Future Work}\label{sec:conclusion}
-All three systems described in the paper have a common property that they are based on
-the principle of type erasure. The type analysis is performed at compile time and
-the types are erased from the programs at runtime.
-This ensures that there is no runtime overheads because of types.
-Due to type safety properties of each of these systems, we are guaranteed
-that if a program passes the type check then it does not crash at runtime.
-A feature that we have not included in each of the systems is the system of kinds, or type of types.
-They provide a way to have partially applied data constructors. The reason to not include them is that
-they are orthogonal to our discussion. Adding them to the system will not change type safety of the language.
+% All three systems described in the paper have a common property that they are based on
+% the principle of type erasure. The type analysis is performed at compile time and
+% the types are erased from the programs at runtime.
+% This ensures that there is no runtime overheads because of types.
+% Due to type safety properties of each of these systems, we are guaranteed
+% that if a program passes the type check then it does not crash at runtime.
+% A feature that we have not included in each of the systems is the system of kinds, or type of types.
+% They provide a way to have partially applied data constructors. The reason to not include them is that
+% they are orthogonal to our discussion. Adding them to the system will not change type safety of the language.
 
 % With squinting eyes, typeclasses with functional dependencies and type families are trying to achieving the
 % same goal---computation on types. While functional dependencies have a flavor of relations,
@@ -1987,19 +2007,18 @@ they are orthogonal to our discussion. Adding them to the system will not change
 % A formal proof about the equality of the expressive power of functional dependencies and
 % type families is an open problem\cite{TODO}. 
 
-Type computation is an attractive feature for programmers with a condition that type checking and inference
-is guaranteed termination. If functional dependencies are morally equivalent to type families
-one would expect to have a translations that can go from one style to another.
-There are two ways to do this, 1) have a translation to a common
-intermediate language or 2) have translation procedures that converts one style to another. Recent work by
-\citep{karachalias_elaboration_2017} explores the first idea by giving an elaboration of functional dependencies
-to type families. There is no known implementation of the algorithm given.
+Type computation, either using functional dependencies or type families
+is an attractive feature for programmers as it considerably improves language expressivity.
+If functional dependencies are morally equivalent to type families
+one would expect to have either of the two cases to be true
+1) translation mechanism that can go from one style to another or 2)
+translation of both the language features into a common intermediate language.
+As of now both of these remain an active area or research\cite{karachalias_elaboration_2017,sulzmann_understanding_2007}.
+
 The type safety formalization of closed type families hinges on the assumption that
 type family reduction are terminating. This problem is effectively solved by using constrained type families.
-However, there is no implementation of constraints type families for the users to test it in the wild.
-
 In conclusion, the motivation of constraint type families is to reunite
-the idea of functional dependencies and type families.
+the idea of functional dependencies and type families that had previously diverged.
 The use of equality constraints to ensure that type family applications are well defined
 is reminiscent of the use of functional dependencies to ensure typeclass instances are well defined.
 \newpage
