@@ -1,9 +1,9 @@
 {-# LANGUAGE RankNTypes, GADTs, TypeFamilies
            , DataKinds, PolyKinds, ScopedTypeVariables
-           , TypeOperators, GeneralisedNewtypeDeriving
+           , TypeOperators
            , UndecidableInstances, FlexibleInstances
            , MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts, UndecidableSuperClasses, TypeFamilyDependencies
+           , FlexibleContexts, TypeFamilyDependencies
 #-}
 
 module QualExam where
@@ -11,7 +11,9 @@ import GHC.Float
 import Data.Proxy
 import GHC.Types
 
-data TBool = TT | FF
+data TT
+data FF
+
 data Z
 data S n
 {-
@@ -20,18 +22,18 @@ type instance TEq a a = TT
 type instance TEq a b = FF -- Error!
 -}
 
-type family TEq (a :: k) (b :: k) :: TBool where
-  TEq a a = 'TT
-  TEq a b = 'FF  -- Ok
-
-type family Or (a :: TBool) (b :: TBool) where
-  Or 'TT _ = 'TT
-  Or _ 'TT = 'TT
-  Or _ _  = 'FF
+type family TEq a b where
+  TEq a a = TT
+  TEq a b = FF
+  
+type family Or a b where
+  Or TT _ = TT
+  Or _ TT = TT
+  Or _ _  = FF
 
 type family And a b where
-  And 'TT 'TT = 'TT
-  And 'TT  a  = a
+  And TT TT = TT
+  And TT  a  = a
 
 type family Wacky a b where
   Wacky a a = Char
@@ -73,8 +75,9 @@ type family CountArgs ty where
 cpf :: Proxy (CountArgs (Int -> Bool -> (Int -> Bool) -> Char))
 cpf = Proxy
 
-type family Loop where
-  Loop = [Loop]
+type family Loop a where
+  Loop Bool = [Bool]
+  Loop t = [Loop t]
 
 -- k :: (TEq [Loop] Loop ~ TT) => Bool
 -- k = True
@@ -150,3 +153,38 @@ instance IdTyFamC a where
 sillyFst x = fst (x, loopy)
 
 sillyFst' x = fst (x, pty)
+
+class PlusC (m :: *) (n :: *) where
+  type Plus m n :: *
+
+instance PlusC Z (n :: *) where
+  type Plus Z n = n
+
+instance PlusC m n => PlusC (S m) (n :: *) where
+  type Plus (S m) n = S (Plus m n)
+
+
+type family Trick a where
+  Trick FF = Int -> Int
+  Trick a  = Bool
+
+funTrick :: a -> Trick (TEq a a)
+funTrick _ = id
+
+
+
+
+-- type family TEq a b where
+--   TEq a a = TT
+--   TEq a b = FF  -- Ok
+
+-- class TEqC a b where
+--   type TEq a b
+
+-- instance TEqC a a where
+--   type TEq a a = TT
+
+-- instance TEqC a b where
+--   type TEq a b = FF
+
+

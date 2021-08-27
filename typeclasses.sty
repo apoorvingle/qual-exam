@@ -1,6 +1,6 @@
 \usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,xspace}
-%\usepackage[framemethod=default]{mdframed}
-
+%\usepackage{parskip}
+\usepackage{tabularx}
 %% no spaces for enumeration
 \setlist{nosep}
 \setlist{nolistsep}
@@ -38,6 +38,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{assumption}[theorem]{Assumption}
 \newtheorem{property}[theorem]{Property}
+%\newtheorem{rule}[theorem]{Rule}
 \theoremstyle{definition}
 \newtheorem{defn}[theorem]{Definition}
 \theoremstyle{remark}
@@ -53,6 +54,7 @@
 \newrefformat{subsec}{Section~\ref{#1}}
 \newrefformat{thm}{Theorem~\ref{#1}}
 \newrefformat{lem}{Lemma~\ref{#1}}
+\newrefformat{def}{Definition~\ref{#1}}
 
 % Names & utils for Typing rules
 \newcommand\ib[1]{\infbox{#1}}
@@ -67,27 +69,27 @@
 \newcommand{\STAR}{\ast}
 \newcommand{\then}{\Rightarrow}
 \def\entails{\vdash\hspace{-0.7ex}\vdash}
-\def\ent#1#2{#1 \entails #2}
+\newcommand\ent[2]{#1 \entails #2}
 \def\ctsfun{\twoheadrightarrow}
 \def\setfun{\rightarrowtail}
-\def\TV#1{TV(#1)}
+\newcommand\TV[1]{TV(#1)}
 \def\co{{:}}% thin colon
-\def\dom#1{dom(#1)}
-\def\mgu#1#2{mgu(#1,#2)}
-\def\unify#1#2{unify(#1,#2)}
+\newcommand\dom[1]{dom(#1)}
+\newcommand\mgu[2]{mgu(#1,#2)}
+\newcommand\unify[2]{unify(#1,#2)}
 \newcommand\Set[1]{\ensuremath{\{#1\}}}
 \newcommand\Tuple[1]{\ensuremath{\langle #1 \rangle}}
 \newcommand\pto{\ensuremath{\rightharpoonup}}
 \newcommand\setdiff{\backslash}
-\newcommand\fundep[1]{\texttt{FD}_\texttt{#1}}
+\newcommand\FunDep[1]{\texttt{FD}_\texttt{#1}}
 \newcommand\closure[2]{{#1}^{+}_{#2}}
 \newcommand\impr[1]{impr(#1)}
-\newcommand\satisfyable[1]{\floor{#1}}
+\newcommand\satisfiable[1]{\floor{#1}}
 \newcommand\Subst{\Omega}
 \newcommand\teq{\mathrel{\sim}}
 \newcommand\lhs[1]{\text{lhs}_{#1}}
 \newcommand\rhs[1]{\text{rhs}_{#1}}
-\def\many#1{\overline{#1}}
+\newcommand\many[1]{\overline{#1}}
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
@@ -119,7 +121,7 @@
 % \newcommand{\tenving}[3]{#1 \mid #2 \vdash #3}
 % \newcommand{\predsing}[2]{#1 \vdash #2}   %% I am not entirely convinced "predsing" is English...
 % \newcommand{\preding}[3]{#1 \mid #2 \vdash #3 \; \mathsf{pred}}
-\def\fresh#1#2{#1 \# #2}
+\newcommand\fresh[2]{#1 \# #2}
 
 \newcommand{\bnfeq}{\mathrel{{:}{:}{=}}}
 \newcommand{\bnfor}{\mathrel{\mid}}
@@ -145,13 +147,14 @@
 \def\AxiomTy{\Psi}
 
 %% Types and Term Syntax
-\def\Tm{e}
-\def\Lam#1#2#3{\lambda #1\co#2.\App #3}
-\def\TLam#1#2{\Lambda #1.\App #2}
+\newcommand\Tm{e}
+\newcommand\val{v}
 \newcommand{\App}{\,}
+\newcommand\Lam[3]{\lambda #1\co#2.\App #3}
+\newcommand\TLam[2]{\Lambda #1.\App #2}
 \newcommand{\Let}[3]{\mathsf{let}\;#1 = #2\;\mathsf{in}\;#3}
 % \newcommand{\Case}[2]{\mathsf{case}\;#1\;\mathsf{of}\;#2}
-\def\Forall#1#2{\forall#1.~#2}
+\newcommand\Forall[2]{\forall#1.~#2}
 \newcommand\tassume[2]{\texttt{assume}~{#1}~\texttt{in}~{#2}}
 \newcommand{\ClassCtrs}{\texttt{C}}
 \newcommand{\TypeCtrs}{\texttt{T}}
