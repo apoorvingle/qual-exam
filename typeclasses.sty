@@ -1,6 +1,7 @@
 \usepackage{fontawesome,enumitem,ifthen,infer,mathwidth,mathtools,multicol,xspace,xy,xspace}
 %\usepackage{parskip}
 \usepackage{tabularx}
+\usepackage{mathbbol}
 %% no spaces for enumeration
 \setlist{nosep}
 \setlist{nolistsep}
@@ -172,16 +173,19 @@
 \def\compat#1#2{\texttt{compat}(#1, #2)}
 \def\match#1#2{\texttt{match}(#1, #2)}
 \def\flatten#1{\texttt{flatten}(#1)}
-\def\Good{\texttt{Good}\xspace}
-
-% Type rewriting
-\def\TEvalCtxt#1{\mathcal{C}[#1]}
-\def\tystepsto#1#2#3{#1 \vdash #2 \rightsquigarrow #3}
+\def\Good#1{\texttt{Good }#1}
 
 % Operational Semantics
-\def\stepsto#1#2{#1 \rightsquigarrow #2}
-\def\manystepsto#1#2{#1 \rightsquigarrow^* #2}
+\def\steps{\mathrel{\rightsquigarrow}}
+\newcommand\stepsto[2]{#1 \rightsquigarrow #2}
+\newcommand\manystepsto[2]{#1 \rightsquigarrow^* #2}
 \def\Val{\mathcal{V}}
+
+% Type rewriting
+\newcommand\TEvalCtxt[1]{\mathbb{C}\mathbb{\Lparen} #1 \mathbb{\Rparen}}
+\newcommand\tystepsto[3]{#1 \vdash \stepsto{#2}{#3}}
+\newcommand\manytystepsto[3]{#1 \vdash \manystepsto{#2}{#3}}
+
 
 
 % Compilation
@@ -192,7 +196,7 @@
 \lstloadlanguages{Haskell}
 \lstset{
   xleftmargin=\parindent,
-  basicstyle=\ttfamily,
+  basicstyle=\small\ttfamily,
   keepspaces=true,
   keywordstyle=\bfseries,%\underbar,
   numberstyle=\tiny,
